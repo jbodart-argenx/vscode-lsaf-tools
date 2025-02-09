@@ -1,0 +1,19 @@
+{
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "label": "set-main-src",
+         "type": "shell",
+         "command": "node",
+         "args": ["setMain.js", "src"],
+         "problemMatcher": []
+      },
+      {
+         "label": "set-main-dist",
+         "type": "shell",
+         "command": "node",
+         "args": ["setMain.js", "dist"],
+         "problemMatcher": []
+      }
+   ]
+}
