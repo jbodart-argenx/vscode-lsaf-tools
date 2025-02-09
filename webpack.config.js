@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = {
    mode: 'production', // Set the mode to 'production' or 'development'
    target: 'node',
-   entry: './extension.js',
+   entry: './src/extension.js',
    output: {
       path: path.resolve(__dirname, 'dist'),
       filename: 'extension.js',
