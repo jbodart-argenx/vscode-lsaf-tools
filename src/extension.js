@@ -1,6 +1,7 @@
 const vscode = require('vscode');
 
 const { initializeSecretModule, deleteAuthTokens, deleteCredentials, logon } = require('./auth.js');
+const { copyFileOrFolderUri } = require('./utils.js');
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -43,11 +44,18 @@ async function activate(context) {
 		(host) => deleteCredentials(host)
 	);
 
+	// Register the command to copy a file URI to the clipboard
+	const getFileUriCommand = vscode.commands.registerCommand(
+		"vscode-lsaf-tools.copyFileUri",
+		(fileOrFolder) => copyFileOrFolderUri(fileOrFolder)
+	);
+
 	// Add the commands to the context
 
 	context.subscriptions.push(helloWorldCommand);
    context.subscriptions.push(getXAuthTokenCommand);
 	context.subscriptions.push(deleteCredentialsCommand);
+	context.subscriptions.push(getFileUriCommand);
 
 	// Log registered LSAF commands 
 	const commands = (await vscode.commands.getCommands()).filter(c => /lsaf/i.test(c));
