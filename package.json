@@ -20,7 +20,7 @@
     "url": "https://github.com/jbodart-argenx/vscode-lsaf-tools/issues"
   },
   "activationEvents": [],
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "contributes": {
     "commands": [
       {
@@ -40,13 +40,18 @@
     ]
   },
   "scripts": {
-    "build": "webpack",
+    "set-main-src": "node setMain.js src",
+    "set-main-dist": "node setMain.js dist",
+    "prebuild": "npm run set-main-dist",
+    "build": "webpack && npm run set-main-src",
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "vscode-test",
     "start": "code --extensionDevelopmentPath=.",
     "update": "npx npm-check-updates -u",
-    "publish": "npx vsce package"
+    "prepublish": "npm run set-main-dist && webpack",
+    "publish": "npx vsce package",
+    "postpublish": "npm run set-main-src"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
