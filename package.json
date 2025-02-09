@@ -22,6 +22,34 @@
   "activationEvents": [],
   "main": "./src/extension.js",
   "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Extension Settings",
+      "properties": {
+        "vscode-lsaf-tools.defaultEndpoints": {
+          "type": "array",
+          "default": [
+            {
+              "label": "lsafleeds/repo",
+              "url": "https://lsafleeds.ondemand.sas.com/lsaf/webdav/repo/"
+            },
+            {
+              "label": "lsafleeds/work",
+              "url": "https://lsafleeds.ondemand.sas.com/lsaf/webdav/work/"
+            },
+            {
+              "label": "lsafgunners/repo",
+              "url": "https://lsafgunners.ondemand.sas.com/lsaf/webdav/repo/"
+            },
+            {
+              "label": "lsafgunners/work",
+              "url": "https://lsafgunners.ondemand.sas.com/lsaf/webdav/work/"
+            }
+          ],
+          "description": "Default endpoints for the vscode-lsaf-tools extension"
+        }
+      }
+    },
     "commands": [
       {
         "command": "vscode-lsaf-tools.getXAuthToken",
@@ -34,10 +62,35 @@
         "category": "LSAF"
       },
       {
+        "command": "vscode-lsaf-tools.copyFileUri",
+        "title": "Rest API: Copy File Uri",
+        "category": "LSAF"
+      },
+      {
         "command": "vscode-lsaf-tools.lsaf-helloWorld",
         "title": "LSAF: Hello World"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "vscode-lsaf-tools.copyFileUri",
+          "group": "LSAF"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "vscode-lsaf-tools.copyFileUri",
+          "group": "LSAF"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "vscode-lsaf-tools.copyFileUri",
+          "group": "LSAF"
+        }
+      ]
+    }
   },
   "scripts": {
     "set-main-src": "node setMain.js src",
