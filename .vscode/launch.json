@@ -11,7 +11,11 @@
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
-			]
+			],
+			"outFiles": [
+				"${workspaceFolder}/src/**/*.js"
+			],
+         "preLaunchTask": "set-main-src"
 		},
 		{
 			"name": "Run Bundled Extension",
@@ -19,7 +23,11 @@
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}/dist"
-			]
+			],
+			"outFiles": [
+				 "${workspaceFolder}/dist/**/*.js"  // Point to the bundled JS files
+			],
+			"preLaunchTask": "set-main-dist"
 		}
 	]
 }
