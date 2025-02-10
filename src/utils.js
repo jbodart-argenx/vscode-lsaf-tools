@@ -2,7 +2,7 @@ const vscode = require('vscode');
 
 const { uriFromString } = require('./uri');
 
-async function copyFileOrFolderUri(fileOrFolder) {
+export async function copyFileOrFolderUri(fileOrFolder) {
    let uri;
    if (fileOrFolder == null) {
       // Use the active file if available
@@ -28,6 +28,5 @@ async function copyFileOrFolderUri(fileOrFolder) {
       vscode.window.showWarningMessage(`Failed to copy File/Folder Uri to clipboard`);
       console.error(`(copyFileOrFolderUri) Failed to copy File/Folder Uri to clipboard`);
    }
-   }
+}
 
-   module.exports = { copyFileOrFolderUri };
