@@ -1,7 +1,4 @@
 const path = require('path');
-const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-const TerserPlugin = require('terser-webpack-plugin');
-const webpack = require('webpack');
 
 module.exports = {
    mode: 'production', // 'production' or 'development'
@@ -25,21 +22,4 @@ module.exports = {
    externals: {
       vscode: 'commonjs vscode',
    },
-   optimization: {
-      splitChunks: {
-         chunks: 'all',
-      },
-      minimize: true,
-      minimizer: [new TerserPlugin()],
-   },
-   plugins: [
-      new webpack.DefinePlugin({
-         'self': '(typeof self !== "undefined" ? self : (typeof global !== "undefined" ? global : this))'
-      }),
-      new BundleAnalyzerPlugin({
-         analyzerMode: 'static',
-         openAnalyzer: false,
-         reportFilename: 'bundle-report.html',
-      }),
-   ],
 };
