@@ -1,7 +1,9 @@
-const vscode = require('vscode');
+import pathBrowserify from 'path-browserify';
+import * as vscode from 'vscode';
+
 const path = typeof process !== 'undefined' && process.versions && process.versions.node
    ? require('path') // Use native path module in Node.js environment
-   : require('path-browserify'); // Use path-browserify in browser environment
+   : pathBrowserify; // Use path-browserify in browser environment
 
 async function getKnownSchemes() {
    const knownSchemes = ['http', 'https', 'ftp', 'file', 'untitled', 'vscode', 'vscode-remote', 'vscode-userdata', 'data', 'lsaf-repo', 'lsaf-work'];
@@ -25,7 +27,7 @@ function isValidSchemeFormat(scheme) {
    return schemeRegex.test(scheme);
 }
 
-async function isValidUri(uriString) {
+export async function isValidUri(uriString) {
    const knownSchemes = await getKnownSchemes();
    try {
       const url = new URL(uriString);
@@ -36,7 +38,7 @@ async function isValidUri(uriString) {
    }
 }
 
-function isRelativeUri(uriString) {
+export function isRelativeUri(uriString) {
    try {
       const uri = new URL(uriString, 'http://example.com');
       let isRelative = false;
@@ -49,7 +51,7 @@ function isRelativeUri(uriString) {
    }
 }
 
-function resolveUri(relativeUri, baseUri) {
+export function resolveUri(relativeUri, baseUri) {
    if (!baseUri) {
       baseUri = getBaseUri();
    }
@@ -62,7 +64,7 @@ function resolveUri(relativeUri, baseUri) {
    }
 }
 
-function uriFromString(param) {
+export function uriFromString(param) {
    if (param instanceof vscode.Uri) {
       return param;
    }
@@ -87,7 +89,7 @@ function uriFromString(param) {
    return null;
 }
 
-function pathFromUri(uri, dropScheme = false) {
+export function pathFromUri(uri, dropScheme = false) {
    if (typeof uri === 'string') {
       if (uri === '') return uri;
       uri = uriFromString(uri);
@@ -110,7 +112,7 @@ function pathFromUri(uri, dropScheme = false) {
    return null;
 }
 
-function getBaseUri(param) {
+export function getBaseUri(param) {
    const workspaceFolders = vscode.workspace.workspaceFolders;
    const activeEditor = vscode.window.activeTextEditor;
 
@@ -141,7 +143,7 @@ function getBaseUri(param) {
    return `file://${path.resolve('./')}/`;
 }
 
-async function existsUri(fileUri, type = null) {
+export async function existsUri(fileUri, type = null) {
    // type: vscode.FileType.File = 1 | vscode.FileType.Directory = 2 | vscode.FileType.SymbolicLink = 64
    let exists = false;
    if (fileUri != null) fileUri = uriFromString(fileUri);
@@ -156,13 +158,3 @@ async function existsUri(fileUri, type = null) {
    }
    return exists;
 }
-
-module.exports = {
-   isValidUri,
-   isRelativeUri,
-   resolveUri,
-   getBaseUri,
-   uriFromString,
-   pathFromUri,
-   existsUri
-};
