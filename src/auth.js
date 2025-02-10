@@ -1,47 +1,40 @@
-const vscode = require("vscode");
-const { axios } = require("./axios-cookie-jar.js");
-const beautify = require("js-beautify");
+import beautify from 'js-beautify';
+import vscode from 'vscode';
+import { axios } from './axios-cookie-jar.js';
 
-const { setAuthToken, getAuthToken, deleteAuthTokens } = (function defineAccessTokenFunctions() {
-   // Closure variable to store authentication tokens (in memory only)
-   const authTokens = {};
+const authTokens = {};
 
-   function setAuthToken (key, value) {
-      authTokens[key] = value;
+export function setAuthToken(key, value) {
+   authTokens[key] = value;
+}
+
+export function getAuthToken(key) {
+   return authTokens[key];
+}
+
+export function deleteAuthTokens(key) {
+   if (key === '*') {
+      const keys = Object.getOwnPropertyNames(authTokens);
+      keys.forEach(key => {
+         delete authTokens[key];
+      });
    }
-
-   function getAuthToken (key) {
-      return authTokens[key];
-   }
-
-   function deleteAuthTokens (key) {
-      if (key === '*') {
-         const keys = Object.getOwnPropertyNames(authTokens);
-         keys.forEach(key => {
-            delete authTokens[key];
-         });
-      }
-      delete authTokens[key];
-   }
-   return { setAuthToken, getAuthToken, deleteAuthTokens };
-})();
-
+   delete authTokens[key];
+}
 
 let secretStorage;
 
-// Initialize the secret module with SecretStorage from the activate function
-function initializeSecretModule(storage) {
+export function initializeSecretModule(storage) {
    secretStorage = storage;
 }
 
-class CredentialStore{
-   constructor(){
+export class CredentialStore {
+   constructor() {
       this.app = 'vscode-lsaf-tools';
    }
 
-   async GetCredential(key){
+   async GetCredential(key) {
       try {
-         // const jsonCreds = await keytar.getPassword(this.app, key);
          const jsonCreds = await secretStorage.get(key);
          if (!jsonCreds) return null;
          const creds = JSON.parse(jsonCreds);
@@ -52,13 +45,12 @@ class CredentialStore{
          };
          return newCreds;
       } catch (error) {
-         console.error(error.message)
+         console.error(error.message);
       }
    }
 
-   async SetCredential(key, username, password){
-      // await keytar.setPassword(this.app, key, JSON.stringify({username, password}));
-      await secretStorage.store(key, JSON.stringify({username, password}));
+   async SetCredential(key, username, password) {
+      await secretStorage.store(key, JSON.stringify({ username, password }));
    }
 
    async DeleteCredential(key) {
@@ -66,17 +58,15 @@ class CredentialStore{
    }
 }
 
-const credStore = new CredentialStore();
+export const credStore = new CredentialStore();
 
-
-const EMPTY_CREDENTIALS = {
+export const EMPTY_CREDENTIALS = {
    newCredentials: true,
    _username: "",
    _password: "",
 };
 
-
-async function getCredentials(key) {
+export async function getCredentials(key) {
    let credentials;
    try {
       credentials = await credStore.GetCredential(key);
@@ -87,49 +77,49 @@ async function getCredentials(key) {
          return credentials;
       }
    } catch (error) {
-      console.error(error.message)
-   }         
+      console.error(error.message);
+   }
 }
 
-async function askForCredentials(key) {
+export async function askForCredentials(key) {
    try {
-      const username = await vscode.window.showInputBox({ 
+      const username = await vscode.window.showInputBox({
          prompt: "Username for " + key + " ?",
-         ignoreFocusOut: true
+         ignoreFocusOut: true,
       });
       if (!username) {
-         return(EMPTY_CREDENTIALS);
+         return EMPTY_CREDENTIALS;
       }
 
-      const password = await vscode.window.showInputBox({ 
-         prompt: "Password ?", 
-         password: true ,
-         ignoreFocusOut: true
+      const password = await vscode.window.showInputBox({
+         prompt: "Password ?",
+         password: true,
+         ignoreFocusOut: true,
       });
       if (!password) {
-         return(EMPTY_CREDENTIALS);
+         return EMPTY_CREDENTIALS;
       }
 
-      return(  {
-                  newCredentials: true,
-                  _username: username,
-                  _password: password,
-               });
+      return {
+         newCredentials: true,
+         _username: username,
+         _password: password,
+      };
    } catch (error) {
       console.error(error.message);
    }
 }
 
-async function storeCredentials(key, username, password) {
+export async function storeCredentials(key, username, password) {
    await credStore.SetCredential(key, username, password);
 }
 
-async function deleteCredentials(key) {
-   if (key == null){
-      key = await vscode.window.showInputBox({ 
+export async function deleteCredentials(key) {
+   if (key == null) {
+      key = await vscode.window.showInputBox({
          title: "Delete credentials for host name",
          prompt: "Enter fully qualified host name (e.g. 'example.ondemand.sas.com')\n",
-         ignoreFocusOut: true
+         ignoreFocusOut: true,
       });
    }
    if (!key) throw new Error('deleteCredentials: no hostname provided, aborting.');
@@ -138,10 +128,10 @@ async function deleteCredentials(key) {
          deleteAuthTokens(key);
          console.log(`Host ${key} auth token deleted.`);
       }
-      if (! (await getCredentials(key))?._password) {
+      if (!(await getCredentials(key))?._password) {
          vscode.window.showErrorMessage(`deleteCredentials: No credentials saved for Host "${key}", aborting.`);
          return;
-      };
+      }
       await credStore.DeleteCredential(key);
       const shortkey = String(key).split('.')[0];
       if (process.env[`${shortkey}_encpasswd`]) {
@@ -165,29 +155,28 @@ async function deleteCredentials(key) {
          vscode.window.showErrorMessage(`Failed to delete Host ${key} credentials!`);
       }
    } catch (error) {
-      if (error){
+      if (error) {
          console.error(`Error deleting Host "${key}" credentials: ${error.message}`);
          vscode.window.showErrorMessage(`Error deleting Host "${key}" credentials: ${error.message}`);
       }
    }
 }
 
-async function logon(host, username, password, retry = true) {
+export async function logon(host, username, password, retry = true) {
    let authToken, encryptedPassword;
    if (typeof host !== 'string' || host.trim().length === 0) {
-      host = await vscode.window.showInputBox({ 
+      host = await vscode.window.showInputBox({
          prompt: "Host name ?",
-         ignoreFocusOut: true
+         ignoreFocusOut: true,
       });
       if (!host) throw new Error("logon error: 'host' parameter must be specified");
    }
    authToken = getAuthToken(host);
    if (authToken) {
-      // Check that token is still valid
       const url = `https://${host}/lsaf/api/workspace/folders/?component=children`;
       try {
          const response = await axios.get(url, {
-            headers: { "X-Auth-Token": authToken }
+            headers: { "X-Auth-Token": authToken },
          });
          if (response.status !== 401) {
             console.log(response.status, response.statusText);
@@ -221,7 +210,7 @@ async function logon(host, username, password, retry = true) {
          return logon(host);
       }
    }
-   if (typeof username === 'string' 
+   if (typeof username === 'string'
       && typeof password === 'string'
       && username.trim().length > 1
       && password.trim().length > 6
@@ -231,7 +220,7 @@ async function logon(host, username, password, retry = true) {
    if (!encryptedPassword || typeof encryptedPassword !== 'string') {
       const creds = await getCredentials(host);
       const { _username, _password: password } = creds;
-      if (typeof _username === 'string' 
+      if (typeof _username === 'string'
          && typeof password === 'string'
          && _username.trim().length > 1
          && password.trim().length > 6
@@ -241,7 +230,7 @@ async function logon(host, username, password, retry = true) {
       } else {
          const creds = await askForCredentials(host);
          const { _username, _password: password } = creds;
-         if (typeof _username === 'string' 
+         if (typeof _username === 'string'
             && typeof password === 'string'
             && _username.trim().length > 1
             && password.trim().length > 6
@@ -261,17 +250,16 @@ async function logon(host, username, password, retry = true) {
    try {
       let response = await axios.post(url, {}, {
          headers: {
-            "Authorization": "Basic " + Buffer.from(username + ":" + encryptedPassword).toString('base64')
-         }
+            "Authorization": "Basic " + Buffer.from(username + ":" + encryptedPassword).toString('base64'),
+         },
       });
       if (response.status === 200) {
          const authToken = response.headers["x-auth-token"];
          console.log("authToken", authToken, "response", response);
          console.log(`Storing Auth Token for host ${host}: ${authToken}`);
-         setAuthToken(host, authToken)
-         // Store the password only if there is no HTTP error and the credentials contain at least a user name
+         setAuthToken(host, authToken);
          await storeCredentials(
-            host, // credentialsKey
+            host,
             username,
             encryptedPassword
          );
@@ -288,7 +276,7 @@ async function logon(host, username, password, retry = true) {
             try {
                encryptedPassword = null;
                const credentials = await askForCredentials(host);
-               if (typeof credentials._username === 'string' 
+               if (typeof credentials._username === 'string'
                   && typeof credentials._password === 'string'
                   && credentials._username.trim().length > 1
                   && credentials._password.trim().length > 6
@@ -306,11 +294,11 @@ async function logon(host, username, password, retry = true) {
             }
          }
       }
-      console.error('Error fetching x-auth-token:', error)
+      console.error('Error fetching x-auth-token:', error);
    }
 }
 
-async function encryptPassword(host, username, password){
+export async function encryptPassword(host, username, password) {
    const url = `https://${host}/lsaf/api/encrypt`;
    console.log('password:', String(password).replaceAll(/\w/g, '*'));
    if (password === '') {
@@ -323,8 +311,8 @@ async function encryptPassword(host, username, password){
    try {
       const response = await axios.get(url, {
          headers: {
-            'Authorization': 'Basic ' + Buffer.from(username + ':' + password).toString('base64')
-         }
+            'Authorization': 'Basic ' + Buffer.from(username + ':' + password).toString('base64'),
+         },
       });
       if (response.status === 401) {
          // Unauthorized
@@ -338,8 +326,3 @@ async function encryptPassword(host, username, password){
       console.error('Error fetching encrypted password:', error);
    }
 }
-
-module.exports = { 
-   storeCredentials, askForCredentials, getCredentials, deleteCredentials, EMPTY_CREDENTIALS, credStore, CredentialStore,
-   initializeSecretModule, setAuthToken, getAuthToken, deleteAuthTokens, logon
-};
