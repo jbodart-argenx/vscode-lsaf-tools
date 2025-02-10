@@ -1,18 +1,18 @@
-import beautify from 'js-beautify';
-import vscode from 'vscode';
-import { axios } from './axios-cookie-jar.js';
+const beautify = require('js-beautify');
+const vscode = require('vscode');
+const { axios } = require('./axios-cookie-jar.js');
 
 const authTokens = {};
 
-export function setAuthToken(key, value) {
+function setAuthToken(key, value) {
    authTokens[key] = value;
 }
 
-export function getAuthToken(key) {
+function getAuthToken(key) {
    return authTokens[key];
 }
 
-export function deleteAuthTokens(key) {
+function deleteAuthTokens(key) {
    if (key === '*') {
       const keys = Object.getOwnPropertyNames(authTokens);
       keys.forEach(key => {
@@ -24,11 +24,11 @@ export function deleteAuthTokens(key) {
 
 let secretStorage;
 
-export function initializeSecretModule(storage) {
+function initializeSecretModule(storage) {
    secretStorage = storage;
 }
 
-export class CredentialStore {
+class CredentialStore {
    constructor() {
       this.app = 'vscode-lsaf-tools';
    }
@@ -58,15 +58,15 @@ export class CredentialStore {
    }
 }
 
-export const credStore = new CredentialStore();
+const credStore = new CredentialStore();
 
-export const EMPTY_CREDENTIALS = {
+const EMPTY_CREDENTIALS = {
    newCredentials: true,
    _username: "",
    _password: "",
 };
 
-export async function getCredentials(key) {
+async function getCredentials(key) {
    let credentials;
    try {
       credentials = await credStore.GetCredential(key);
@@ -81,7 +81,7 @@ export async function getCredentials(key) {
    }
 }
 
-export async function askForCredentials(key) {
+async function askForCredentials(key) {
    try {
       const username = await vscode.window.showInputBox({
          prompt: "Username for " + key + " ?",
@@ -110,11 +110,11 @@ export async function askForCredentials(key) {
    }
 }
 
-export async function storeCredentials(key, username, password) {
+async function storeCredentials(key, username, password) {
    await credStore.SetCredential(key, username, password);
 }
 
-export async function deleteCredentials(key) {
+async function deleteCredentials(key) {
    if (key == null) {
       key = await vscode.window.showInputBox({
          title: "Delete credentials for host name",
@@ -162,7 +162,7 @@ export async function deleteCredentials(key) {
    }
 }
 
-export async function logon(host, username, password, retry = true) {
+async function logon(host, username, password, retry = true) {
    let authToken, encryptedPassword;
    if (typeof host !== 'string' || host.trim().length === 0) {
       host = await vscode.window.showInputBox({
@@ -298,7 +298,7 @@ export async function logon(host, username, password, retry = true) {
    }
 }
 
-export async function encryptPassword(host, username, password) {
+async function encryptPassword(host, username, password) {
    const url = `https://${host}/lsaf/api/encrypt`;
    console.log('password:', String(password).replaceAll(/\w/g, '*'));
    if (password === '') {
@@ -326,3 +326,19 @@ export async function encryptPassword(host, username, password) {
       console.error('Error fetching encrypted password:', error);
    }
 }
+
+module.exports = {
+   setAuthToken,
+   getAuthToken,
+   deleteAuthTokens,
+   initializeSecretModule,
+   CredentialStore,
+   credStore,
+   EMPTY_CREDENTIALS,
+   getCredentials,
+   askForCredentials,
+   storeCredentials,
+   deleteCredentials,
+   logon,
+   encryptPassword
+};

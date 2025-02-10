@@ -2,7 +2,7 @@ const vscode = require('vscode');
 
 const { uriFromString } = require('./uri');
 
-export async function copyFileOrFolderUri(fileOrFolder) {
+async function copyFileOrFolderUri(fileOrFolder) {
    let uri;
    if (fileOrFolder == null) {
       // Use the active file if available
@@ -30,3 +30,4 @@ export async function copyFileOrFolderUri(fileOrFolder) {
    }
 }
 
+module.exports = { copyFileOrFolderUri };

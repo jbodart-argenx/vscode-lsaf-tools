@@ -1,5 +1,5 @@
-import pathBrowserify from 'path-browserify';
-import * as vscode from 'vscode';
+const pathBrowserify = require('path-browserify');
+const vscode = require('vscode');
 
 const path = typeof process !== 'undefined' && process.versions && process.versions.node
    ? require('path') // Use native path module in Node.js environment
@@ -27,7 +27,7 @@ function isValidSchemeFormat(scheme) {
    return schemeRegex.test(scheme);
 }
 
-export async function isValidUri(uriString) {
+async function isValidUri(uriString) {
    const knownSchemes = await getKnownSchemes();
    try {
       const url = new URL(uriString);
@@ -38,7 +38,7 @@ export async function isValidUri(uriString) {
    }
 }
 
-export function isRelativeUri(uriString) {
+function isRelativeUri(uriString) {
    try {
       const uri = new URL(uriString, 'http://example.com');
       let isRelative = false;
@@ -51,7 +51,7 @@ export function isRelativeUri(uriString) {
    }
 }
 
-export function resolveUri(relativeUri, baseUri) {
+function resolveUri(relativeUri, baseUri) {
    if (!baseUri) {
       baseUri = getBaseUri();
    }
@@ -64,7 +64,7 @@ export function resolveUri(relativeUri, baseUri) {
    }
 }
 
-export function uriFromString(param) {
+function uriFromString(param) {
    if (param instanceof vscode.Uri) {
       return param;
    }
@@ -89,7 +89,7 @@ export function uriFromString(param) {
    return null;
 }
 
-export function pathFromUri(uri, dropScheme = false) {
+function pathFromUri(uri, dropScheme = false) {
    if (typeof uri === 'string') {
       if (uri === '') return uri;
       uri = uriFromString(uri);
@@ -112,7 +112,7 @@ export function pathFromUri(uri, dropScheme = false) {
    return null;
 }
 
-export function getBaseUri(param) {
+function getBaseUri(param) {
    const workspaceFolders = vscode.workspace.workspaceFolders;
    const activeEditor = vscode.window.activeTextEditor;
 
@@ -143,7 +143,7 @@ export function getBaseUri(param) {
    return `file://${path.resolve('./')}/`;
 }
 
-export async function existsUri(fileUri, type = null) {
+async function existsUri(fileUri, type = null) {
    // type: vscode.FileType.File = 1 | vscode.FileType.Directory = 2 | vscode.FileType.SymbolicLink = 64
    let exists = false;
    if (fileUri != null) fileUri = uriFromString(fileUri);
@@ -158,3 +158,13 @@ export async function existsUri(fileUri, type = null) {
    }
    return exists;
 }
+
+module.exports = {
+   isValidUri,
+   isRelativeUri,
+   resolveUri,
+   getBaseUri,
+   uriFromString,
+   pathFromUri,
+   existsUri
+};

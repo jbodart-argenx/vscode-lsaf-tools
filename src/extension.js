@@ -8,18 +8,17 @@ async function activate(context) {
 	console.log('Extension "vscode-lsaf-tools" activated.');
 
 	const secretStorage = context.secrets;
-	const { initializeSecretModule } = await import('./auth.js');
+	const { initializeSecretModule } = await require('./auth.js');
 	initializeSecretModule(secretStorage);
 
 	const helloWorldCommand = vscode.commands.registerCommand('vscode-lsaf-tools.lsaf-helloWorld', async function () {
-		const { showInformationMessage } = await import('./utils.js');
-		showInformationMessage('Hello World from vscode-lsaf-tools extension!');
+		vscode.window.showInformationMessage('Hello World from vscode-lsaf-tools extension!');
 	});
 
 	const getXAuthTokenCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.getXAuthToken",
 		async (host) => {
-			const { logon } = await import('./auth.js');
+			const { logon } = await require('./auth.js');
 			return logon(host);
 		}
 	);
@@ -27,7 +26,7 @@ async function activate(context) {
 	const deleteCredentialsCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.deleteCredentials",
 		async (host) => {
-			const { deleteCredentials } = await import('./auth.js');
+			const { deleteCredentials } = await require('./auth.js');
 			return deleteCredentials(host);
 		}
 	);
@@ -35,7 +34,7 @@ async function activate(context) {
 	const getFileUriCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.copyFileUri",
 		async (fileOrFolder) => {
-			const { copyFileOrFolderUri } = await import('./utils.js');
+			const { copyFileOrFolderUri } = await require('./utils.js');
 			return copyFileOrFolderUri(fileOrFolder);
 		}
 	);
@@ -51,7 +50,7 @@ async function activate(context) {
 }
 
 function deactivate() {
-	import('./auth.js').then(({ deleteAuthTokens }) => {
+	require('./auth.js').then(({ deleteAuthTokens }) => {
 		deleteAuthTokens('*');
 		console.log('Extension "vscode-lsaf-tools" deactivated.');
 	});
