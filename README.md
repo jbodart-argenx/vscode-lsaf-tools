@@ -14,6 +14,14 @@ This is the README for extension "vscode-lsaf-tools".
 
 N/A.
 
+## Installation
+
+### code-server on WSL
+To install version 0.0.1:
+```
+code-server --install-extension vscode-lsaf-tools-0.0.1.vsix
+```
+
 ## Extension Settings
 
 This extension contributes the following settings:
