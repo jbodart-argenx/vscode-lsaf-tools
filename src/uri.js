@@ -1,5 +1,7 @@
 const vscode = require('vscode');
-const path = require('path');
+const path = typeof process !== 'undefined' && process.versions && process.versions.node
+   ? require('path') // Use native path module in Node.js environment
+   : require('path-browserify'); // Use path-browserify in browser environment
 
 async function getKnownSchemes() {
    const knownSchemes = ['http', 'https', 'ftp', 'file', 'untitled', 'vscode', 'vscode-remote', 'vscode-userdata', 'data', 'lsaf-repo', 'lsaf-work'];
@@ -65,7 +67,7 @@ function uriFromString(param) {
       return param;
    }
    if (param != null && typeof param === 'string') {
-      try{
+      try {
          // decide if vscode.Uri.parse or vscode.Uri.file should be used
          // if param matches a URI path, use vscode.Uri.parse
          // otherwise, use vscode.Uri.file
@@ -138,7 +140,6 @@ function getBaseUri(param) {
    // Fallback to the current working directory
    return `file://${path.resolve('./')}/`;
 }
-
 
 async function existsUri(fileUri, type = null) {
    // type: vscode.FileType.File = 1 | vscode.FileType.Directory = 2 | vscode.FileType.SymbolicLink = 64
