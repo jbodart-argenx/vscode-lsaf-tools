@@ -6,7 +6,7 @@
   "publisher": "jbodart-argenx",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.97.0"
+    "vscode": "^1.71.2"
   },
   "categories": [
     "Other"
@@ -21,6 +21,7 @@
   },
   "activationEvents": [],
   "main": "./src/extension.js",
+  "browser": "./dist/web/extension.js",
   "contributes": {
     "configuration": {
       "type": "object",
@@ -109,7 +110,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
-    "@types/vscode": "^1.97.0",
+    "@types/vscode": "^1.71.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.20.0",
@@ -119,6 +120,7 @@
   "dependencies": {
     "axios": "^1.7.9",
     "axios-cookiejar-support": "^5.0.5",
-    "js-beautify": "^1.15.2"
+    "js-beautify": "^1.15.2",
+    "path-browserify": "^1.0.1"
   }
 }
