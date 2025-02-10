@@ -19,7 +19,12 @@
   "bugs": {
     "url": "https://github.com/jbodart-argenx/vscode-lsaf-tools/issues"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:vscode-lsaf-tools.lsaf-helloWorld",
+    "onCommand:vscode-lsaf-tools.getXAuthToken",
+    "onCommand:vscode-lsaf-tools.deleteCredentials",
+    "onCommand:vscode-lsaf-tools.copyFileUri"
+  ],
   "main": "./src/extension.js",
   "browser": "./dist/web/extension.js",
   "contributes": {

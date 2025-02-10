@@ -1,5 +1,9 @@
 const vscode = require('vscode');
 
+if (typeof self === 'undefined') {
+	global.self = global;
+}
+
 async function activate(context) {
 	console.log('Extension "vscode-lsaf-tools" activated.');
 

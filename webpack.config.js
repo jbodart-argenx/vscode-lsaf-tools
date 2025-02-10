@@ -1,6 +1,7 @@
 const path = require('path');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const TerserPlugin = require('terser-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
    mode: 'production', // 'production' or 'development'
@@ -13,6 +14,7 @@ module.exports = {
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].js',  // Replaced pattern with the name of each entry point: 'extension' and 'web/extension'
       libraryTarget: 'commonjs2',
+      publicPath: '' // Explicitly set the publicPath to an empty string
    },
    resolve: {
       extensions: ['.js'],
@@ -31,6 +33,9 @@ module.exports = {
       minimizer: [new TerserPlugin()],
    },
    plugins: [
+      new webpack.DefinePlugin({
+         'self': '(typeof self !== "undefined" ? self : (typeof global !== "undefined" ? global : this))'
+      }),
       new BundleAnalyzerPlugin({
          analyzerMode: 'static',
          openAnalyzer: false,
