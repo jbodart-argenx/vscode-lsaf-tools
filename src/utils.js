@@ -4,11 +4,15 @@ console.log('Default Endpoints:', defaultEndpoints);
 
 const { uriFromString } = require('./uri');
 
+function getFileOrFolderUri(fileOrFolder) {
+   return (fileOrFolder == null && vscode.window.activeTextEditor) ?
+      vscode.window.activeTextEditor.document.uri :
+      vscode.window.activeEditor?.document?.uri ||
+      uriFromString(fileOrFolder);
+}
+
 async function copyFileOrFolderUri(fileOrFolder) {
-   const fileOrFolderUri = (fileOrFolder == null && vscode.window.activeTextEditor) ?
-   vscode.window.activeTextEditor.document.uri :
-   vscode.window.activeEditor?.document?.uri ||
-   uriFromString(fileOrFolder);
+   const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
    if (fileOrFolderUri) {
       try {
          vscode.env.clipboard.writeText(fileOrFolderUri.toString());
@@ -29,10 +33,7 @@ async function getOppositeEndpointUri(fileOrFolder) {
    const config = vscode.workspace.getConfiguration("vscode-lsaf-tools");
    const endpoints = config.get('defaultEndpoints') || [];
    if (endpoints) {
-      const fileOrFolderUri = (fileOrFolder == null && vscode.window.activeTextEditor) ?
-         vscode.window.activeTextEditor.document.uri :
-         vscode.window.activeEditor?.document?.uri ||
-         uriFromString(fileOrFolder);
+      const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
       // Find the endpoints that match and don't match the fileOrFolderUri
       const endpointIndex = defaultEndpoints.findIndex(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
       if (fileOrFolderUri && endpointIndex >= 0) {
@@ -61,4 +62,4 @@ async function getOppositeEndpointUri(fileOrFolder) {
    return null;
 }
 
-module.exports = { copyFileOrFolderUri, getOppositeEndpointUri };
+module.exports = { getFileOrFolderUri, copyFileOrFolderUri, getOppositeEndpointUri };
