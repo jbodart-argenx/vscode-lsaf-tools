@@ -27,6 +27,9 @@
   ],
   "main": "./src/extension.js",
   "browser": "./dist/web/extension.js",
+  "capabilities": {
+    "virtualWorkspaces": true
+  },
   "contributes": {
     "configuration": {
       "type": "object",
@@ -71,6 +74,10 @@
         "command": "vscode-lsaf-tools.copyFileUri",
         "title": "Rest API: Copy File Uri",
         "category": "LSAF"
+      },
+      {
+        "command": "vscode-lsaf-tools.getOppositeEndpointUri",
+        "title": "LSAF: Get Opposite Endpoint Uri"
       },
       {
         "command": "vscode-lsaf-tools.lsaf-helloWorld",

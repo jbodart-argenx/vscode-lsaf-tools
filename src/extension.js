@@ -4,6 +4,9 @@ if (typeof self === 'undefined') {
 	global.self = global;
 }
 
+let defaultEndpoints = require('./endpoints').defaultEndpoints;
+console.log('Default Endpoints:', defaultEndpoints);
+
 async function activate(context) {
 	console.log('Extension "vscode-lsaf-tools" activated.');
 
@@ -39,10 +42,32 @@ async function activate(context) {
 		}
 	);
 
+	const getOppositeEndpointUriCommand = vscode.commands.registerCommand(
+		"vscode-lsaf-tools.getOppositeEndpointUri",
+		async (fileOrFolder) => {
+			const { getOppositeEndpointUri } = await require('./utils.js');
+			const oppositeEndpointUri =  getOppositeEndpointUri(fileOrFolder);
+			if (oppositeEndpointUri) {
+				try {
+					vscode.env.clipboard.writeText(oppositeEndpointUri.toString());
+					console.log(`(getOppositeEndpointUri) Opposite File/Folder Uri copied to clipboard: ${oppositeEndpointUri}`);
+					vscode.window.showInformationMessage(`Opposite File/Folder Uri copied to clipboard: ${oppositeEndpointUri}`);
+				} catch (error) {
+					vscode.window.showErrorMessage(`Error copying Opposite File/Folder Uri to clipboard: ${error.message}`);         
+					console.error(`(getOppositeEndpointUri) Error copying Opposite File/Folder Uri to clipboard: ${error.message}`);         
+				}
+			}
+			return oppositeEndpointUri;
+		}
+	);
+
 	context.subscriptions.push(helloWorldCommand);
 	context.subscriptions.push(getXAuthTokenCommand);
 	context.subscriptions.push(deleteCredentialsCommand);
 	context.subscriptions.push(getFileUriCommand);
+	context.subscriptions.push(getOppositeEndpointUriCommand);
+
+
 
 	const commands = (await vscode.commands.getCommands()).filter(c => /lsaf/i.test(c));
 	console.log('(vscode-lsaf-tools) Activated vscode.commands:');
