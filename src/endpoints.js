@@ -20,15 +20,15 @@ const username = os.userInfo().username;
 //       "vscode-lsaf-tools.defaultEndpoints": [
 //             {
 //                "label": "local",
-//                "uri": "file:///c:/Users/username/lsaf/"
+//                "uri": "file:///c:/Users/${username}/lsaf/"
 //             },
 //             {
 //                "label": "WSL",
-//                "uri": "file:///home/username/lsaf/"
+//                "uri": "file:///home/${username}/lsaf/"
 //             },
 //             {
 //                "label": "RSWB",
-//                "uri": "file:///home/username@argen-x.com/lsaf/"
+//                "uri": "file:///home/${username}@argen-x.com/lsaf/"
 //             },
 //             {
 //                "label": "example/repo",
