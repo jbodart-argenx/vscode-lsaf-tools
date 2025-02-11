@@ -5,23 +5,15 @@ console.log('Default Endpoints:', defaultEndpoints);
 const { uriFromString } = require('./uri');
 
 async function copyFileOrFolderUri(fileOrFolder) {
-   let uri;
-   if (fileOrFolder == null) {
-      // Use the active file if available
-      const activeEditor = vscode.window.activeEditor;
-      if (activeEditor) {
-         uri = activeEditor.document.uri;
-      }
-   } else if (typeof fileOrFolder === 'string') {
-      uri = uriFromString(fileOrFolder);
-   } else if (fileOrFolder instanceof vscode.Uri) {
-      uri = fileOrFolder;
-   }
-   if (uri) {
+   const fileOrFolderUri = (fileOrFolder == null && vscode.window.activeTextEditor) ?
+   vscode.window.activeTextEditor.document.uri :
+   vscode.window.activeEditor?.document?.uri ||
+   uriFromString(fileOrFolder);
+   if (fileOrFolderUri) {
       try {
-         vscode.env.clipboard.writeText(uri.toString());
-         console.log(`(copyFileOrFolderUri) File/Folder Uri copied to clipboard: ${uri}`);
-         vscode.window.showInformationMessage(`File/Folder Uri copied to clipboard: ${uri}`);
+         vscode.env.clipboard.writeText(fileOrFolderUri.toString());
+         console.log(`(copyFileOrFolderUri) File/Folder Uri copied to clipboard: ${fileOrFolderUri}`);
+         vscode.window.showInformationMessage(`File/Folder Uri copied to clipboard: ${fileOrFolderUri}`);
       } catch (error) {
          vscode.window.showErrorMessage(`Error copying File/Folder Uri to clipboard: ${error.message}`);         
          console.error(`(copyFileOrFolderUri) Error copying File/Folder Uri to clipboard: ${error.message}`);         
@@ -37,10 +29,13 @@ async function getOppositeEndpointUri(fileOrFolder) {
    const config = vscode.workspace.getConfiguration("vscode-lsaf-tools");
    const endpoints = config.get('defaultEndpoints') || [];
    if (endpoints) {
-      const fileOrFolderUri = uriFromString(fileOrFolder);
+      const fileOrFolderUri = (fileOrFolder == null && vscode.window.activeTextEditor) ?
+         vscode.window.activeTextEditor.document.uri :
+         vscode.window.activeEditor?.document?.uri ||
+         uriFromString(fileOrFolder);
       // Find the endpoints that match and don't match the fileOrFolderUri
-      const endpointIndex = defaultEndpoints.findIndex(ep => fileOrFolderUri.toString().startsWith(ep.uri.toString()));
-      if (endpointIndex >= 0) {
+      const endpointIndex = defaultEndpoints.findIndex(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
+      if (fileOrFolderUri && endpointIndex >= 0) {
          const endpoint1 = defaultEndpoints[endpointIndex];
          const endpoint1RelPath = fileOrFolderUri.toString().replace(endpoint1.uri.toString(), '').replace(/^\//, '');
          const otherEndpoints = defaultEndpoints.filter((ep, idx) => idx !== endpointIndex);
@@ -51,8 +46,8 @@ async function getOppositeEndpointUri(fileOrFolder) {
          if (selectedOtherEndpointLabel) {
             const otherEndpoint = otherEndpoints.find(ep => ep.label === selectedOtherEndpointLabel);
             const otherEndpointUri = vscode.Uri.joinPath(otherEndpoint.uri, endpoint1RelPath);
-            console.log(`(getOppositeEndpoint) Opposite endpoint for ${fileOrFolder} is ${otherEndpointUri}`);
-            vscode.window.showInformationMessage(`Opposite endpoint for ${fileOrFolder} is ${otherEndpointUri}`);
+            console.log(`(getOppositeEndpoint) Opposite endpoint for ${fileOrFolderUri} is ${otherEndpointUri}`);
+            vscode.window.showInformationMessage(`Opposite endpoint for ${fileOrFolderUri} is ${otherEndpointUri}`);
             return otherEndpointUri;
          }
       } else {
