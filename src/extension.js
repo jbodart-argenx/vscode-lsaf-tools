@@ -46,7 +46,7 @@ async function activate(context) {
 		"vscode-lsaf-tools.getOppositeEndpointUri",
 		async (fileOrFolder) => {
 			const { getOppositeEndpointUri } = await require('./utils.js');
-			const oppositeEndpointUri =  getOppositeEndpointUri(fileOrFolder);
+			const oppositeEndpointUri = await getOppositeEndpointUri(fileOrFolder);
 			if (oppositeEndpointUri) {
 				try {
 					vscode.env.clipboard.writeText(oppositeEndpointUri.toString());
