@@ -23,7 +23,8 @@
     "onCommand:vscode-lsaf-tools.lsaf-helloWorld",
     "onCommand:vscode-lsaf-tools.getXAuthToken",
     "onCommand:vscode-lsaf-tools.deleteCredentials",
-    "onCommand:vscode-lsaf-tools.copyFileUri"
+    "onCommand:vscode-lsaf-tools.copyFileUri",
+    "onCommand:vscode-lsaf-tools.getOppositeEndpointUri"
   ],
   "main": "./src/extension.js",
   "browser": "./dist/web/extension.js",
@@ -38,6 +39,10 @@
         "vscode-lsaf-tools.defaultEndpoints": {
           "type": "array",
           "default": [
+            {
+              "label": "local",
+              "uri": "file:///c:/Users/${username}/lsaf/"
+            },
             {
               "label": "lsafleeds/repo",
               "url": "https://lsafleeds.ondemand.sas.com/lsaf/webdav/repo/"
@@ -62,17 +67,17 @@
     "commands": [
       {
         "command": "vscode-lsaf-tools.getXAuthToken",
-        "title": "Rest API: Get Auth Token",
+        "title": "LSAF: Get Auth Token",
         "category": "LSAF"
       },
       {
         "command": "vscode-lsaf-tools.deleteCredentials",
-        "title": "Rest API: Delete Credentials",
+        "title": "LSAF: Delete Credentials",
         "category": "LSAF"
       },
       {
         "command": "vscode-lsaf-tools.copyFileUri",
-        "title": "Rest API: Copy File Uri",
+        "title": "LSAF: Copy File Uri",
         "category": "LSAF"
       },
       {
@@ -89,17 +94,29 @@
         {
           "command": "vscode-lsaf-tools.copyFileUri",
           "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.getOppositeEndpointUri",
+          "group": "LSAF"
         }
       ],
       "editor/context": [
         {
           "command": "vscode-lsaf-tools.copyFileUri",
           "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.getOppositeEndpointUri",
+          "group": "LSAF"
         }
       ],
       "editor/title/context": [
         {
           "command": "vscode-lsaf-tools.copyFileUri",
+          "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.getOppositeEndpointUri",
           "group": "LSAF"
         }
       ]
