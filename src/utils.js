@@ -1,8 +1,9 @@
 const vscode = require('vscode');
-let defaultEndpoints = require('./endpoints').defaultEndpoints;
-console.log('Default Endpoints:', defaultEndpoints);
+// let defaultEndpoints = require('./endpoints').defaultEndpoints;
+// console.log('Default Endpoints:', defaultEndpoints);
 
 const { uriFromString } = require('./uri');
+const { getDefaultEndpoints } = require("./endpoints");
 
 function getFileOrFolderUri(fileOrFolder) {
    return (fileOrFolder == null && vscode.window.activeTextEditor) ?
@@ -30,16 +31,15 @@ async function copyFileOrFolderUri(fileOrFolder) {
 
 async function getOppositeEndpointUri(fileOrFolder) {
    // Get the opposite endpoint from the defaultEndpoints
-   const config = vscode.workspace.getConfiguration("vscode-lsaf-tools");
-   const endpoints = config.get('defaultEndpoints') || [];
+   const endpoints = getDefaultEndpoints() || [];
    if (endpoints) {
       const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
       // Find the endpoints that match and don't match the fileOrFolderUri
-      const endpointIndex = defaultEndpoints.findIndex(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
+      const endpointIndex = endpoints.findIndex(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
       if (fileOrFolderUri && endpointIndex >= 0) {
-         const endpoint1 = defaultEndpoints[endpointIndex];
+         const endpoint1 = endpoints[endpointIndex];
          const endpoint1RelPath = fileOrFolderUri.toString().replace(endpoint1.uri.toString(), '').replace(/^\//, '');
-         const otherEndpoints = defaultEndpoints.filter((ep, idx) => idx !== endpointIndex);
+         const otherEndpoints = endpoints.filter((ep, idx) => idx !== endpointIndex);
          const selectedOtherEndpointLabel = await vscode.window.showQuickPick(otherEndpoints.map(ep => ep.label), {
             placeHolder: "Choose an endpoint",
             canPickMany: false,
@@ -64,12 +64,11 @@ async function getOppositeEndpointUri(fileOrFolder) {
 
 async function getLsafPath(fileOrFolder) {
    // Get the opposite endpoint from the defaultEndpoints
-   const config = vscode.workspace.getConfiguration("vscode-lsaf-tools");
-   const endpoints = config.get('defaultEndpoints') || [];
+   const endpoints = getDefaultEndpoints() || [];
    if (endpoints) {
       const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
       // Find the endpoint that matches the fileOrFolderUri
-      const endpoint = defaultEndpoints.find(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
+      const endpoint = endpoints.find(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
       if (fileOrFolderUri && endpoint) {
          const endpointRelPath = fileOrFolderUri.toString().replace(endpoint.uri.toString(), '');
          console.log(`(getLsafPath) LSAF path for ${fileOrFolderUri} is ${endpointRelPath}`);
