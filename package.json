@@ -168,6 +168,7 @@
     "axios": "^1.7.9",
     "axios-cookiejar-support": "^5.0.5",
     "js-beautify": "^1.15.2",
+    "os-browserify": "^0.3.0",
     "path-browserify": "^1.0.1"
   }
 }

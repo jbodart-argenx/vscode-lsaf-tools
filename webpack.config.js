@@ -1,8 +1,8 @@
 const path = require('path');
+const webpack = require('webpack');
 
-module.exports = {
+const commonConfig = {
    mode: 'production', // 'production' or 'development'
-   target: 'webworker', // 'webworker' for web extensions
    entry: {
       extension: './src/extension.js',
       'web/extension': './src/web/extension.js'
@@ -16,10 +16,28 @@ module.exports = {
    resolve: {
       extensions: ['.js'],
       fallback: {
-         "path": require.resolve("path-browserify")
+         "path": require.resolve("path-browserify"),
+         "os": require.resolve("os-browserify/browser")
       }
    },
    externals: {
       vscode: 'commonjs vscode',
    },
+   plugins: [
+      new webpack.DefinePlugin({
+         'self': JSON.stringify('typeof self !== "undefined" ? self : this')
+      })
+   ]
 };
+
+const nodeConfig = {
+   ...commonConfig,
+   target: 'node', // Use 'node' for Node.js environment (code-server)
+};
+
+const webConfig = {
+   ...commonConfig,
+   target: 'webworker', // Use 'webworker' for web extensions
+};
+
+module.exports = [nodeConfig, webConfig];
