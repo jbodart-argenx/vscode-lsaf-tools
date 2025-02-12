@@ -53,11 +53,33 @@ async function activate(context) {
       }
    );
 
-   context.subscriptions.push(helloWorldCommand);
-   context.subscriptions.push(getXAuthTokenCommand);
-   context.subscriptions.push(deleteCredentialsCommand);
-   context.subscriptions.push(getFileUriCommand);
-   context.subscriptions.push(getOppositeEndpointUriCommand);
+	const getLsafFilePathCommand = vscode.commands.registerCommand(
+		"vscode-lsaf-tools.getLsafFilePath",
+		async (fileOrFolder) => {
+			const { getLsafPath } = await require('./utils.js');
+			const lsafPath = await getLsafPath(fileOrFolder);
+			if (lsafPath) {
+				try {
+					vscode.env.clipboard.writeText(lsafPath.toString());
+					console.log(`(getlsafPath) LSAF File/Folder Path copied to clipboard: ${lsafPath}`);
+					vscode.window.showInformationMessage(`LSAF File/Folder Path copied to clipboard: ${lsafPath}`);
+				} catch (error) {
+					vscode.window.showErrorMessage(`Error copying LSAF File/Folder Path to clipboard: ${error.message}`);         
+					console.error(`(getlsafPath) Error copying LSAF File/Folder Path to clipboard: ${error.message}`);         
+				}
+			}
+			return lsafPath;
+		}
+	);
+
+	context.subscriptions.push(...[
+		helloWorldCommand,
+		getXAuthTokenCommand,
+		deleteCredentialsCommand,
+		getFileUriCommand,
+		getOppositeEndpointUriCommand,
+		getLsafFilePathCommand,
+	]);
 
    const commands = (await vscode.commands.getCommands()).filter(c => /lsaf/i.test(c));
    console.log('(vscode-lsaf-tools) Activated vscode.commands:');

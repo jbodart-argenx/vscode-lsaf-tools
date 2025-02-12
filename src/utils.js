@@ -62,4 +62,29 @@ async function getOppositeEndpointUri(fileOrFolder) {
    return null;
 }
 
-module.exports = { getFileOrFolderUri, copyFileOrFolderUri, getOppositeEndpointUri };
+async function getLsafPath(fileOrFolder) {
+   // Get the opposite endpoint from the defaultEndpoints
+   const config = vscode.workspace.getConfiguration("vscode-lsaf-tools");
+   const endpoints = config.get('defaultEndpoints') || [];
+   if (endpoints) {
+      const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
+      // Find the endpoint that matches the fileOrFolderUri
+      const endpoint = defaultEndpoints.find(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
+      if (fileOrFolderUri && endpoint) {
+         const endpointRelPath = fileOrFolderUri.toString().replace(endpoint.uri.toString(), '');
+         console.log(`(getLsafPath) LSAF path for ${fileOrFolderUri} is ${endpointRelPath}`);
+         vscode.window.showInformationMessage(`LSAF path for ${fileOrFolderUri} is ${endpointRelPath}`);
+         return endpointRelPath;
+      } else {
+         vscode.window.showWarningMessage(`Failed to get LSAF path for ${fileOrFolder}: no matching endpoint found.`);
+         console.error(`(getLsafPath) Failed to get LSAF path for ${fileOrFolder}: no matching endpoint found.`);
+      }
+   } else {
+      vscode.window.showWarningMessage(`Failed to get LSAF path for ${fileOrFolder}: no endpoints defined.`);
+      console.error(`(getLsafPath) Failed to get LSAF path for ${fileOrFolder}: no endpoints defined.`);
+   }
+   return null;
+}
+
+
+module.exports = { getFileOrFolderUri, getLsafPath, copyFileOrFolderUri, getOppositeEndpointUri };
