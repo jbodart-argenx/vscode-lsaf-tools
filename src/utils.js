@@ -70,7 +70,7 @@ async function getLsafPath(fileOrFolder) {
       // Find the endpoint that matches the fileOrFolderUri
       const endpoint = endpoints.find(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
       if (fileOrFolderUri && endpoint) {
-         const endpointRelPath = fileOrFolderUri.toString().replace(endpoint.uri.toString(), '');
+         const endpointRelPath = fileOrFolderUri.toString().replace(endpoint.uri.toString().replace(/\/$/, ''), '');
          console.log(`(getLsafPath) LSAF path for ${fileOrFolderUri} is ${endpointRelPath}`);
          vscode.window.showInformationMessage(`LSAF path for ${fileOrFolderUri} is ${endpointRelPath}`);
          return endpointRelPath;
