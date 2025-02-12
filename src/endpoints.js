@@ -86,4 +86,4 @@ vscode.workspace.onDidChangeConfiguration((e) => {
    }
 });
 
-module.exports = { defaultEndpoints };
+module.exports = { defaultEndpoints, getDefaultEndpoints };
