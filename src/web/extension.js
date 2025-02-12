@@ -1,6 +1,6 @@
 const vscode = require('vscode');
 
-let defaultEndpoints = require('./endpoints').defaultEndpoints;
+let defaultEndpoints = require('../endpoints').defaultEndpoints;
 console.log('Default Endpoints:', defaultEndpoints);
 
 const { initializeSecretModule, deleteAuthTokens, deleteCredentials, logon } = require('../auth.js');
@@ -37,7 +37,7 @@ async function activate(context) {
    const getOppositeEndpointUriCommand = vscode.commands.registerCommand(
       "vscode-lsaf-tools.getOppositeEndpointUri",
       async (fileOrFolder) => {
-         const { getOppositeEndpointUri } = await require('./utils.js');
+         const { getOppositeEndpointUri } = await require('../utils.js');
          const oppositeEndpointUri = await getOppositeEndpointUri(fileOrFolder);
          if (oppositeEndpointUri) {
             try {
@@ -56,7 +56,7 @@ async function activate(context) {
 	const getLsafFilePathCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.getLsafFilePath",
 		async (fileOrFolder) => {
-			const { getLsafPath } = await require('./utils.js');
+			const { getLsafPath } = await require('../utils.js');
 			const lsafPath = await getLsafPath(fileOrFolder);
 			if (lsafPath) {
 				try {
