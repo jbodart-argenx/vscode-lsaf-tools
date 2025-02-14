@@ -11,3 +11,8 @@ vsc-extension-quickstart.md
 **/.vscode-test.*
 node_modules/**
 !node_modules/vscode
+run-lint.js
+setMain.js
+dist/**
+!dist/extension.js
+!dist/web/extension.js
