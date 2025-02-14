@@ -1,5 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
+// const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 const commonConfig = {
    mode: 'production', // 'production' or 'development'
@@ -17,7 +18,8 @@ const commonConfig = {
       extensions: ['.js'],
       fallback: {
          "path": require.resolve("path-browserify"),
-         "os": require.resolve("os-browserify/browser")
+         "os": require.resolve("os-browserify/browser"),
+         "util": require.resolve("util") // Use the 'util' module from npm as a fallback of the Node.js module
       }
    },
    externals: {
@@ -26,7 +28,8 @@ const commonConfig = {
    plugins: [
       new webpack.DefinePlugin({
          'self': JSON.stringify('typeof self !== "undefined" ? self : this')
-      })
+      }),
+      // new BundleAnalyzerPlugin()  // after building, open a web page showing the dependency tree of the project
    ]
 };
 
