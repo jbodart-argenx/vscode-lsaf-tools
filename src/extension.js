@@ -8,7 +8,25 @@ let defaultEndpoints = require('./endpoints').defaultEndpoints;
 console.log('Default Endpoints:', defaultEndpoints);
 
 async function activate(context) {
-	console.log('Extension "vscode-lsaf-tools" activated.');
+	console.log('Extension "vscode-lsaf-tools" activating...');
+
+	if (vscode.env.appHost === "desktop") {
+		const os = require('os'); // Load only in desktop environment
+		console.log("Running on platform:", os.platform());
+	} else {
+		console.log("Running in a web browser, using 'os-browserify/browser' instead of 'os' module.");
+		const os = require('os-browserify/browser');
+		console.log("Running on platform:", os.platform());
+		// eslint-disable-next-line no-undef
+		// const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "Node.js";
+		// globalThis provides a standardized way to access the global object, whether in a browser, Node.js, Web Workers, or other JavaScript environments.
+		const userAgent = globalThis.navigator?.userAgent || "Node.js";
+		const platform = userAgent.includes("Windows") ? "Windows" : 
+			userAgent.includes("Mac") ? "Mac" : 
+			userAgent.includes("Linux") ? "Linux" : 
+			"Unknown";
+		console.log("Running on platform:", platform);
+	}
 
 	const secretStorage = context.secrets;
 	const { initializeSecretModule } = await require('./auth.js');
@@ -49,7 +67,7 @@ async function activate(context) {
 			const oppositeEndpointUri = await getOppositeEndpointUri(fileOrFolder);
 			if (oppositeEndpointUri) {
 				try {
-					vscode.env.clipboard.writeText(oppositeEndpointUri.toString());
+					await vscode.env.clipboard.writeText(oppositeEndpointUri.toString());
 					console.log(`(getOppositeEndpointUri) Opposite File/Folder Uri copied to clipboard: ${oppositeEndpointUri}`);
 					vscode.window.showInformationMessage(`Opposite File/Folder Uri copied to clipboard: ${oppositeEndpointUri}`);
 				} catch (error) {
@@ -68,7 +86,7 @@ async function activate(context) {
 			const lsafPath = await getLsafPath(fileOrFolder);
 			if (lsafPath) {
 				try {
-					vscode.env.clipboard.writeText(lsafPath.toString());
+					await vscode.env.clipboard.writeText(lsafPath.toString());
 					console.log(`(getlsafPath) LSAF File/Folder Path copied to clipboard: ${lsafPath}`);
 					vscode.window.showInformationMessage(`LSAF File/Folder Path copied to clipboard: ${lsafPath}`);
 				} catch (error) {
@@ -87,7 +105,7 @@ async function activate(context) {
 			const localPath = await getLocalPath(fileOrFolder);
 			if (localPath) {
 				try {
-					vscode.env.clipboard.writeText(localPath.toString());
+					await vscode.env.clipboard.writeText(localPath.toString());
 					console.log(`(getLocalPath) Local File/Folder Path copied to clipboard: ${localPath}`);
 					vscode.window.showInformationMessage(`Local File/Folder Path copied to clipboard: ${localPath}`);
 				} catch (error) {
