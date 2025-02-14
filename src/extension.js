@@ -40,7 +40,7 @@ async function activate(context) {
 		"vscode-lsaf-tools.getXAuthToken",
 		async (host) => {
 			const { logon } = await require('./auth.js');
-			return logon(host);
+			return await logon(host);
 		}
 	);
 
