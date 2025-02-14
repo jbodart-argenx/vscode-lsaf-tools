@@ -25,7 +25,9 @@
     "onCommand:vscode-lsaf-tools.deleteCredentials",
     "onCommand:vscode-lsaf-tools.copyFileUri",
     "onCommand:vscode-lsaf-tools.getOppositeEndpointUri",
-    "onCommand:vscode-lsaf-tools.getLsafFilePath"
+    "onCommand:vscode-lsaf-tools.getLsafFilePath",
+    "onCommand:vscode-lsaf-tools.getLocalFilePath",
+    "onCommand:vscode-lsaf-tools.copyToOppositeEndpoint"
   ],
   "main": "./src/extension.js",
   "browser": "./dist/web/extension.js",
@@ -184,7 +186,9 @@
     "update": "npx npm-check-updates -u",
     "prepublish": "npm run set-main-dist && webpack",
     "publish": "npx vsce package",
-    "postpublish": "npm run set-main-src"
+    "postpublish": "npm run set-main-src",
+    "prebrowser": "npm run build",
+    "browser": "npm run set-main-dist && npx @vscode/test-web --extensionDevelopmentPath=."
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
@@ -202,6 +206,7 @@
     "axios-cookiejar-support": "^5.0.5",
     "js-beautify": "^1.15.2",
     "os-browserify": "^0.3.0",
-    "path-browserify": "^1.0.1"
+    "path-browserify": "^1.0.1",
+    "util": "^0.12.5"
   }
 }
