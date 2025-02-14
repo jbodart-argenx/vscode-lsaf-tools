@@ -2,8 +2,11 @@ const vscode = require("vscode");
 // const beautify = require("js-beautify");
 // const path = require("path");
 const { uriFromString } = require("./uri");
-const os = require('os');
-const username = os.userInfo().username;
+const os = typeof process !== 'undefined' && process.versions && process.versions.node
+   ? require('os') // Use native os module in Node.js environment
+   : require('os-browserify/browser'); // Use os-browserify in browser environment
+
+const username = os.userInfo ? os.userInfo().username : 'default-username'; // Fallback for browser environment
 
 
 // Default endpoints are defined in the settings.json file
