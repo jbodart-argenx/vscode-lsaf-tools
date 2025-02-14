@@ -90,6 +90,14 @@
         "title": "LSAF: Get LSAF Path"
       },
       {
+        "command": "vscode-lsaf-tools.getLocalFilePath",
+        "title": "LSAF: Get Local Path"
+      },
+      {
+        "command": "vscode-lsaf-tools.copyToOppositeEndpoint",
+        "title": "LSAF: Copy To Opposite Endpoint"
+      },
+      {
         "command": "vscode-lsaf-tools.lsaf-helloWorld",
         "title": "LSAF: Hello World"
       }
@@ -107,6 +115,14 @@
         {
           "command": "vscode-lsaf-tools.getLsafFilePath",
           "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.getLocalFilePath",
+          "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.copyToOppositeEndpoint",
+          "group": "LSAF"
         }
       ],
       "editor/context": [
@@ -121,6 +137,14 @@
         {
           "command": "vscode-lsaf-tools.getLsafFilePath",
           "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.getLocalFilePath",
+          "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.copyToOppositeEndpoint",
+          "group": "LSAF"
         }
       ],
       "editor/title/context": [
@@ -134,6 +158,14 @@
         },
         {
           "command": "vscode-lsaf-tools.getLsafFilePath",
+          "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.getLocalFilePath",
+          "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.copyToOppositeEndpoint",
           "group": "LSAF"
         }
       ]

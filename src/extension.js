@@ -80,6 +80,33 @@ async function activate(context) {
 		}
 	);
 
+	const getLocalFilePathCommand = vscode.commands.registerCommand(
+		"vscode-lsaf-tools.getLocalFilePath",
+		async (fileOrFolder) => {
+			const { getLocalPath } = await require('./utils.js');
+			const localPath = await getLocalPath(fileOrFolder);
+			if (localPath) {
+				try {
+					vscode.env.clipboard.writeText(localPath.toString());
+					console.log(`(getLocalPath) Local File/Folder Path copied to clipboard: ${localPath}`);
+					vscode.window.showInformationMessage(`Local File/Folder Path copied to clipboard: ${localPath}`);
+				} catch (error) {
+					vscode.window.showErrorMessage(`Error copying Local File/Folder Path to clipboard: ${error.message}`);         
+					console.error(`(getLocalPath) Error copying Local File/Folder Path to clipboard: ${error.message}`);         
+				}
+			}
+			return localPath;
+		}
+	);
+
+	const copyToOppositeEndpointCommand = vscode.commands.registerCommand(
+		"vscode-lsaf-tools.copyToOppositeEndpoint",
+		async (fileOrFolder) => {
+			const { copyToOppositeEndpoint } = await require('./utils.js');
+			return copyToOppositeEndpoint(fileOrFolder);
+		}
+	);
+
 	context.subscriptions.push(...[
 		helloWorldCommand,
 		getXAuthTokenCommand,
@@ -87,6 +114,8 @@ async function activate(context) {
 		getFileUriCommand,
 		getOppositeEndpointUriCommand,
 		getLsafFilePathCommand,
+		getLocalFilePathCommand,
+		copyToOppositeEndpointCommand
 	]);
 
 	const commands = (await vscode.commands.getCommands()).filter(c => /lsaf/i.test(c));
