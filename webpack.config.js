@@ -19,7 +19,8 @@ const commonConfig = {
       fallback: {
          "path": require.resolve("path-browserify"),
          "os": require.resolve("os-browserify/browser"),
-         "util": require.resolve("util") // Use the 'util' module from npm as a fallback of the Node.js module
+         "util": require.resolve("util"), // Use the 'util' module from npm as a fallback of the Node.js module
+         "stream": require.resolve("stream-browserify"), // Use the 'stream' module from npm as a fallback of the Node.js module
       }
    },
    externals: {
@@ -41,6 +42,12 @@ const nodeConfig = {
 const webConfig = {
    ...commonConfig,
    target: 'webworker', // Use 'webworker' for web extensions
+   plugins: [
+      ...commonConfig.plugins,
+      new webpack.IgnorePlugin({
+         resourceRegExp: /^fs$/,
+      }),
+   ],
 };
 
 module.exports = [nodeConfig, webConfig];
