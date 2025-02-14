@@ -146,6 +146,7 @@
     "build": "webpack && npm run set-main-src",
     "lint": "eslint .",
     "pretest": "npm run lint",
+    "run-lint": "node run-lint.js",
     "test": "vscode-test",
     "start": "code --extensionDevelopmentPath=.",
     "update": "npx npm-check-updates -u",
