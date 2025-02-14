@@ -159,7 +159,83 @@ async function getLocalPath(fileOrFolder) {
 }
 
 
-async function copyToOppositeEndpoint(fileOrFolder){
+
+async function getFormData(fileUri, fileContents) {
+   const { Readable } = await require('stream');
+   let filename;
+   if (fileUri && fileUri instanceof vscode.Uri) {
+      filename = fileUri.path.split(/[\\/]/).slice(-1)[0];
+   } else {
+      console.warn(`(getFormData) fileUri is not a Uri: ${fileUri}`);
+      vscode.window.showErrorMessage(`(getFormData) fileUri is not a Uri: ${fileUri}`);
+      throw new Error(`(getFormData) fileUri is not a Uri: ${fileUri}`);
+   }
+   console.log('filename:', filename);
+   let formdata = new FormData();
+   if (fileContents && fileContents instanceof Uint8Array) {
+      // Create a Buffer from the string content and convert it to a Readable Stream
+      const bufferStream = new Readable();
+      bufferStream._read = () => { }; // No operation needed for the _read method
+      bufferStream.push(fileContents); // Push the content to the stream
+      bufferStream.push(null);    // Signal end of the stream
+
+      // Append the file-like content to the FormData object with the key 'uploadFile'
+      formdata.append('uploadFile', bufferStream, { filename });
+      // formdata.append('uploadFile', new Blob([this.fileContents]), filename);    // fails because Blob is not a stream
+      return [formdata, filename];
+   }
+   if (fileUri && fileUri instanceof vscode.Uri) {
+      try {
+         const stream = await vscode.commands.executeCommand(
+            "vsce-lsaf-restapi-fs.getFileReadStream",
+            fileUri
+         );
+         if (stream) {
+            formdata.append('uploadFile', stream, { filename });
+            console.log('formdata:', formdata);
+            return [formdata, filename];
+         } else {
+            // vscode.window.showWarningMessage(`Failed to upload file: could not read file stream.`);
+            // console.error(`(uploadFile) Failed to upload file: could not read file stream.`);
+            // return null;
+            console.log('(getFormData) Could not read file as a stream');
+         }
+      }  catch (error) {
+         console.log(`(getFormData) Could not read file as a stream: ${error.message}`);
+         // vscode.window.showErrorMessage(`(getFormData) Could not read file as a stream: ${error.message}`);
+         // console.error(`(getFormData) Could not read file as a stream: ${error.message}`);
+         // return null;
+      }
+      let fs;
+      if (typeof process !== 'undefined') {  // node environment
+         fs = await require('fs');
+      }
+      if (fs && fileUri.scheme === 'file') {
+         try {
+            formdata = new FormData();
+            formdata.append('file', fs.createReadStream(fileUri.fsPath));
+            return [formdata, filename];
+         } catch (error) {
+            console.log(`(getFormData) Could not read file as a stream: ${error.message}`);
+         }
+      }   
+      try { 
+         const fileContents = await vscode.workspace.fs.readFile(fileUri);
+         // Convert Uint8Array to Buffer
+         const buffer = Buffer.from(fileContents);
+         // Append the file to the FormData
+         formdata.append('uploadFile', buffer, filename);
+         console.log('(getFormData) formdata:', formdata);
+         return [formdata, filename];
+      } catch (error) {
+         vscode.window.showErrorMessage(`(getFormData) Could not read file contents: ${error.message}`);
+         console.error(`(getFormData) Could not read file contents: ${error.message}`);
+         return null;
+      }
+   }
+}
+
+async function copyToOppositeEndpoint(fileOrFolder) {
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(copyToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
@@ -197,8 +273,114 @@ async function copyToOppositeEndpoint(fileOrFolder){
       }
    } else {
       // Upload to remote endpoint
-      debugger;
-      vscode.window.showWarningMessage(`Copying to remote endpoint not yet implemented.`);
+      const { logon } = await require('./auth.js');
+      let host = oppositeEndpointUri.authority;
+      if (host && ['lsaf-repo', 'lasf-work'].includes(oppositeEndpointUri.scheme)) {
+         host = `${host}.ondemand.sas.com`;
+      }
+      const authToken = await logon(host);
+      if (!authToken) {
+         vscode.window.showErrorMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not authenticate.`);
+         console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not authenticate.`);
+         return null;
+      }
+      const endpoints = getDefaultEndpoints() || [];
+      let oppositeEndpoint;
+      if (endpoints) {
+         // Find the endpoints that match and don't match the fileOrFolderUri
+         const endpointIndex = endpoints.findIndex(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
+         if (endpointIndex >= 0) {
+            oppositeEndpoint = endpoints[endpointIndex];
+         }
+      }
+      if (oppositeEndpoint && oppositeEndpoint.url) {
+         const axios = await require('axios');
+         const path = await require('path');
+         const beautify = await require("js-beautify");
+         const fileContents = await vscode.workspace.fs.readFile(fileOrFolderUri);
+         const apiUrl = `https://${host}/lsaf/api`;
+         const urlPath = new URL(this.config.remoteEndpoint.url).pathname
+            .replace(/\/lsaf\/webdav\/work\//, '/workspace/files/')
+            .replace(/\/lsaf\/webdav\/repo\//, '/repository/files/')
+            .replace(/\/$/, '')
+            ;
+         console.log('urlPath:', urlPath);
+         const filePath = oppositeEndpoint.uri.path;
+         let apiRequest = `${path.posix.join(urlPath, filePath)}?action=upload&version=MINOR&createParents=true&overwrite=true`;
+         // const comment = await enterMultiLineComment(`Add / Update ${pathFromUri(fileOrFolderUri)}\n\n`);
+         // if (comment) {
+         //    apiRequest = `${apiRequest}&comment=${encodeURIComponent(comment)}`;
+         // }
+         apiRequest = `${apiRequest}&expand=item,status`;
+         let formdata;
+         let filename;
+         let requestOptions;
+         let fullUrl;
+         [formdata, filename] = await getFormData(fileOrFolderUri, fileContents);
+         requestOptions = {
+            headers: {
+               ...formdata.getHeaders(),
+               "X-Auth-Token": this.authToken
+            }
+         };
+         let response;
+         try {
+            fullUrl = apiUrl + apiRequest
+            fullUrl = encodeURI(apiUrl + apiRequest);
+            console.log('(uploadFile) fullUrl:', fullUrl);
+            const controller = new AbortController();
+            const timeout = 10_000;
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            try {
+               response = await axios.put(fullUrl, formdata, { ...requestOptions, signal: controller.signal });
+               clearTimeout(timeoutId); // clear timeout when the request completes
+            } catch (error) {
+               if (error.code === 'ECONNABORTED') {
+                  console.error(`(uploadFile) Fetch request timed out after ${timeout/1000} seconds.`);
+                  throw new Error(`(uploadFile) Fetch request timed out after ${timeout/1000} seconds.`);
+               } else {
+                  debugger;
+                  console.error('(uploadFile) Fetch request failed:', error);
+                  throw new Error('(uploadFile) Fetch request failed:', error.message);
+               }
+            }
+            console.log('(uploadFile) response.status:', response.status, response.statusText);
+         } catch (error) {
+            console.error(`(uploadFile) Error uploading file:`, error);
+            throw new Error(`(uploadFile) Error uploading file: ${error.message}`);
+         }
+
+         let result;
+         let status;
+         let message;
+         const contentType = response.headers['content-type'];
+         console.log('(RestApi.uploadFileContents) contentType:', contentType);
+         if (response.headers['content-type'].match(/\bjson\b/)) {
+            const data = response.data;
+            status = data.status;
+            result = beautify(JSON.stringify(data), {
+               indent_size: 2,
+               space_in_empty_paren: true,
+            });
+         } else {
+            result = response.data;
+         }
+         console.log('(RestApi.uploadFileContents) result:', result);
+         if (status?.type === 'FAILURE') {
+            message = `File "${filename}" upload to "${path.posix.join(urlPath, filePath)}" on ${new URL(fullUrl).hostname} failed: ` + status?.message || result;
+         } else if (status?.type === 'SUCCESS') {
+            message = `File "${filename}" uploaded to : ${new URL(fullUrl).hostname.split('.')[0]} ${urlPath.split('/')[1]}, ` + status?.message || result;
+         } else {
+            console.log('result:', result);
+            message = `File "${filename}" upload result: ${result}`;
+         }
+         console.log(message);
+         vscode.window.showInformationMessage(message);
+         
+      } else {
+         vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: no matching endpoint found.`);
+         console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: no matching endpoint found.`);
+      }
    }
 } 
 
