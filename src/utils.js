@@ -275,8 +275,12 @@ async function copyToOppositeEndpoint(fileOrFolder) {
       // Upload to remote endpoint
       const { logon } = await require('./auth.js');
       let host = oppositeEndpointUri.authority;
-      if (host && ['lsaf-repo', 'lasf-work'].includes(oppositeEndpointUri.scheme)) {
+      if (host && ['lsaf-repo', 'lsaf-work'].includes(oppositeEndpointUri.scheme)) {
          host = `${host}.ondemand.sas.com`;
+      } else {
+         vscode.window.showWarningMessage(`Unexpected host: ${host} and/or scheme: ${oppositeEndpointUri.scheme}.`);
+         console.error(`(copyToOppositeEndpoint) Unexpected host: ${host} and/or scheme: ${oppositeEndpointUri.scheme}.`);
+         return null;
       }
       const authToken = await logon(host);
       if (!authToken) {
