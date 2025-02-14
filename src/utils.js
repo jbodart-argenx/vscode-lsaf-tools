@@ -19,7 +19,7 @@ async function copyFileOrFolderUri(fileOrFolder) {
    const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
    if (fileOrFolderUri) {
       try {
-         vscode.env.clipboard.writeText(fileOrFolderUri.toString());
+         await vscode.env.clipboard.writeText(fileOrFolderUri.toString());
          console.log(`(copyFileOrFolderUri) File/Folder Uri copied to clipboard: ${fileOrFolderUri}`);
          vscode.window.showInformationMessage(`File/Folder Uri copied to clipboard: ${fileOrFolderUri}`);
       } catch (error) {
@@ -45,7 +45,6 @@ async function getOppositeEndpointUri(fileOrFolder) {
    // Get the opposite endpoint from the defaultEndpoints
    const endpoints = getDefaultEndpoints() || [];
    if (endpoints) {
-      const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
       // Find the endpoints that match and don't match the fileOrFolderUri
       const endpointIndex = endpoints.findIndex(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
       if (fileOrFolderUri && endpointIndex >= 0) {
@@ -121,7 +120,7 @@ async function getLocalPath(fileOrFolder) {
    if (endpoints) {
       // Find the local endpoints
       let localEndpoints = endpoints.filter(ep => ep.uri.scheme === 'file');
-      if (localEndpoints.length = 0) {
+      if (localEndpoints.length === 0) {
          vscode.window.showWarningMessage(`Failed to get local path for ${fileOrFolder}: no local endpoints found.`);
          console.error(`(getLocalPath) Failed to get local path for ${fileOrFolder}: no local endpoints found.`);
          return null;
@@ -135,10 +134,19 @@ async function getLocalPath(fileOrFolder) {
       }
       if (localEndpoints.length === 1) {
          const localEndpoint = localEndpoints[0];
-         const localPath = fileOrFolderUri.toString().replace(localEndpoint.uri.toString().replace(/\/$/, ''), '');
-         console.log(`(getLocalPath) Local path for ${fileOrFolderUri} is ${localPath}`);
-         vscode.window.showInformationMessage(`Local path for ${fileOrFolderUri} is ${localPath}`);
-         return localPath;
+         // Find the endpoint that matches the fileOrFolderUri
+         const endpoint = endpoints.find(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
+         try {            
+            const localFileOrFolderUri = vscode.Uri.joinPath(localEndpoint.uri, fileOrFolderUri.toString().replace(endpoint.uri.toString().replace(/\/$/, ''), ''));
+            const localPath = decodeURIComponent(localFileOrFolderUri.fsPath);
+            console.log(`(getLocalPath) Local path for ${fileOrFolderUri} is: ${localPath}`);
+            vscode.window.showInformationMessage(`Local path for ${fileOrFolderUri} is: ${localPath}`);
+            return localPath;
+         } catch (error) {
+            vscode.window.showWarningMessage(`Failed to get Local path for ${fileOrFolder}: ${error.message}`);
+            console.error(`(getLocalPath) Failed to get Local path for ${fileOrFolder}: ${error.message}`);
+            return null;
+         }
       } else {      
          vscode.window.showWarningMessage(`Failed to get Local endpoint path for ${fileOrFolder}: no local endpoint found.`);
          console.error(`(getLsafPath) Failed to get Local endpoint path for ${fileOrFolder}: no local endpoint found.`);
@@ -161,7 +169,7 @@ async function copyToOppositeEndpoint(fileOrFolder){
       console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
       return null;
    }
-   const oppositeEndpointUri = getOppositeEndpointUri(fileOrFolder);
+   const oppositeEndpointUri = await getOppositeEndpointUri(fileOrFolder);
    if (!oppositeEndpointUri) {
       vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not identify opposite endpoint.`);
       console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not identify opposite endpoint.`);
