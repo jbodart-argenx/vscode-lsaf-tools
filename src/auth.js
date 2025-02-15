@@ -182,7 +182,7 @@ async function logon(host, username, password, retry = true) {
             console.log(response.status, response.statusText);
             if (response.status === 200) {
                setAuthToken(host, authToken);
-               return;
+               return authToken;
             } else {
                console.log(`(logon): Unexpected HTTP response status ${response.status} ${response.statusText}:`);
                response.headers.forEach((value, name) => {
