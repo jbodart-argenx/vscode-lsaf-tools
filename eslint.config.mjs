@@ -3,8 +3,8 @@ import globals from "globals";
 export default [{
     files: ["**/*.js"],
     ignores: [
-        ".vscode-test/vscode-*/**",
-        ".vscode-test/extensions/**",
+        ".vscode-test/**",
+        ".vscode-test-web/**",
         "dist/**",
     ],
     languageOptions: {
