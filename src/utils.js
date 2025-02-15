@@ -261,7 +261,7 @@ async function copyToOppositeEndpoint(fileOrFolder) {
       vscode.window.showInformationMessage(`(copyToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
    const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
-   if (! fileOrFolderUri) {
+   if (!fileOrFolderUri) {
       vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
       console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
       return null;
@@ -331,8 +331,7 @@ async function copyToOppositeEndpoint(fileOrFolder) {
          const urlPath = new URL(oppositeEndpoint.url).pathname
             .replace(/\/lsaf\/webdav\/work\//, '/workspace/files/')
             .replace(/\/lsaf\/webdav\/repo\//, '/repository/files/')
-            .replace(/\/$/, '')
-            ;
+            .replace(/\/$/, '');
          console.log('urlPath:', urlPath);
          const filePath = fileOrFolderUri.path.replace(endpoint.uri.path, '');
          console.log('filePath:', filePath);
@@ -355,7 +354,6 @@ async function copyToOppositeEndpoint(fileOrFolder) {
          };
          let response;
          try {
-            fullUrl = apiUrl + apiRequest
             fullUrl = encodeURI(apiUrl + apiRequest);
             console.log('(uploadFile) fullUrl:', fullUrl);
             const controller = new AbortController();
@@ -366,8 +364,8 @@ async function copyToOppositeEndpoint(fileOrFolder) {
                clearTimeout(timeoutId); // clear timeout when the request completes
             } catch (error) {
                if (error.code === 'ECONNABORTED') {
-                  console.error(`(uploadFile) Fetch request timed out after ${timeout/1000} seconds.`);
-                  throw new Error(`(uploadFile) Fetch request timed out after ${timeout/1000} seconds.`);
+                  console.error(`(uploadFile) Fetch request timed out after ${timeout / 1000} seconds.`);
+                  throw new Error(`(uploadFile) Fetch request timed out after ${timeout / 1000} seconds.`);
                } else {
                   debugger;
                   console.error('(uploadFile) Fetch request failed:', error);
