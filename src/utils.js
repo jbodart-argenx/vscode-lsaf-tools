@@ -1,8 +1,7 @@
 const vscode = require('vscode');
-// let defaultEndpoints = require('./endpoints').defaultEndpoints;
-// console.log('Default Endpoints:', defaultEndpoints);
 
-const { uriFromString } = require('./uri');
+const { getMultiLineText: getMultiLineInput } = require('./multiLineText.js');
+const { uriFromString, pathFromUri } = require('./uri');
 const { getDefaultEndpoints } = require("./endpoints");
 
 function getFileOrFolderUri(fileOrFolder) {
@@ -159,6 +158,25 @@ async function getLocalPath(fileOrFolder) {
 }
 
 
+async function enterMultiLineComment(defaultValue) {
+
+
+   vscode.window.showInformationMessage(`Enter a (multi-line) comment and click 'submit' when done.`);
+
+   const userInput = await getMultiLineInput(defaultValue);
+   let comment;
+   if (userInput.trim()) {
+      console.log(`Comment entered: ${userInput}`);
+      vscode.window.showInformationMessage(`Comment entered: ${userInput}`);
+      comment = userInput;
+   } else {
+      console.log('No comment provided.');
+      // vscode.window.showInformationMessage('No comment provided.');
+      comment = null;
+   }
+   console.log('Entered comment:\n', comment);
+   return comment;
+}
 
 async function getFormData(fileUri, fileContents) {
    let filename;
@@ -336,10 +354,10 @@ async function copyToOppositeEndpoint(fileOrFolder) {
          const filePath = fileOrFolderUri.path.replace(endpoint.uri.path, '');
          console.log('filePath:', filePath);
          let apiRequest = `${path.posix.join(urlPath, filePath)}?action=upload&version=MINOR&createParents=true&overwrite=true`;
-         // const comment = await enterMultiLineComment(`Add / Update ${pathFromUri(fileOrFolderUri)}\n\n`);
-         // if (comment) {
-         //    apiRequest = `${apiRequest}&comment=${encodeURIComponent(comment)}`;
-         // }
+         const comment = await enterMultiLineComment(`Add / Update ${pathFromUri(fileOrFolderUri)}\n\n`);
+         if (comment) {
+            apiRequest = `${apiRequest}&comment=${encodeURIComponent(comment)}`;
+         }
          apiRequest = `${apiRequest}&expand=item,status`;
          let formdata;
          let filename;
