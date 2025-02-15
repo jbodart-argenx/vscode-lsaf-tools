@@ -161,7 +161,6 @@ async function getLocalPath(fileOrFolder) {
 
 
 async function getFormData(fileUri, fileContents) {
-   const { Readable } = await require('stream');
    let filename;
    if (fileUri && fileUri instanceof vscode.Uri) {
       filename = fileUri.path.split(/[\\/]/).slice(-1)[0];
@@ -171,6 +170,13 @@ async function getFormData(fileUri, fileContents) {
       throw new Error(`(getFormData) fileUri is not a Uri: ${fileUri}`);
    }
    console.log('filename:', filename);
+
+   // Dynamically import modules
+   const { Readable } = await import('stream');
+   const FormData = (await import('form-data')).default;
+
+   // const { Readable } = await require('stream');
+   // const FormData = await require('form-data');  // Node.js implementation of FormData for multipart/form-data including streams
    let formdata = new FormData();
    if (fileContents && fileContents instanceof Uint8Array) {
       // Create a Buffer from the string content and convert it to a Readable Stream
@@ -181,19 +187,34 @@ async function getFormData(fileUri, fileContents) {
 
       // Append the file-like content to the FormData object with the key 'uploadFile'
       formdata.append('uploadFile', bufferStream, { filename });
-      // formdata.append('uploadFile', new Blob([this.fileContents]), filename);    // fails because Blob is not a stream
+      // formdata.append('uploadFile', new Blob([this.fileContents]), filename);    // fails in node.js because Blob is not a stream
       return [formdata, filename];
    }
    if (fileUri && fileUri instanceof vscode.Uri) {
       try {
-         const stream = await vscode.commands.executeCommand(
-            "vsce-lsaf-restapi-fs.getFileReadStream",
-            fileUri
-         );
+         let commands = await vscode.commands.getCommands();
+         console.log('commands:', commands);
+         commands = commands.filter(c => /lsaf/i.test(c));
+         console.log(commands);
+         commands = commands.filter(c =>  /getFileReadStream/i.test(c));
+         console.log('commands:', commands);
+         let stream;
+         if (commands.includes('vsce-lsaf-restapi-fs.getFileReadStream')) {
+            stream = await vscode.commands.executeCommand(
+               "vsce-lsaf-restapi-fs.getFileReadStream",
+               fileUri
+            );
+         }
          if (stream) {
-            formdata.append('uploadFile', stream, { filename });
-            console.log('formdata:', formdata);
-            return [formdata, filename];
+            console.log('typeof stream:', typeof stream);
+            if (stream instanceof Readable) {   // stream is a Readable stream
+               formdata.append('uploadFile', stream, { filename });
+               console.log('formdata:', formdata);
+               return [formdata, filename];
+            } else {
+               console.error('(getFormData) stream is not an instance of Readable');
+               throw new Error('(getFormData) stream is not an instance of Readable');
+            }
          } else {
             // vscode.window.showWarningMessage(`Failed to upload file: could not read file stream.`);
             // console.error(`(uploadFile) Failed to upload file: could not read file stream.`);
@@ -289,27 +310,32 @@ async function copyToOppositeEndpoint(fileOrFolder) {
          return null;
       }
       const endpoints = getDefaultEndpoints() || [];
-      let oppositeEndpoint;
+      let endpoint, oppositeEndpoint;
       if (endpoints) {
-         // Find the endpoints that match and don't match the fileOrFolderUri
          const endpointIndex = endpoints.findIndex(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
          if (endpointIndex >= 0) {
-            oppositeEndpoint = endpoints[endpointIndex];
+            endpoint = endpoints[endpointIndex];
+         }
+         const oppositeEndpointIndex = endpoints.findIndex(ep => (oppositeEndpointUri?.toString() || '').startsWith(ep.uri.toString()));
+         if (oppositeEndpointIndex >= 0) {
+            oppositeEndpoint = endpoints[oppositeEndpointIndex];
          }
       }
       if (oppositeEndpoint && oppositeEndpoint.url) {
          const axios = await require('axios');
          const path = await require('path');
          const beautify = await require("js-beautify");
-         const fileContents = await vscode.workspace.fs.readFile(fileOrFolderUri);
+         let fileContents;
+         // fileContents = await vscode.workspace.fs.readFile(fileOrFolderUri);
          const apiUrl = `https://${host}/lsaf/api`;
-         const urlPath = new URL(this.config.remoteEndpoint.url).pathname
+         const urlPath = new URL(oppositeEndpoint.url).pathname
             .replace(/\/lsaf\/webdav\/work\//, '/workspace/files/')
             .replace(/\/lsaf\/webdav\/repo\//, '/repository/files/')
             .replace(/\/$/, '')
             ;
          console.log('urlPath:', urlPath);
-         const filePath = oppositeEndpoint.uri.path;
+         const filePath = fileOrFolderUri.path.replace(endpoint.uri.path, '');
+         console.log('filePath:', filePath);
          let apiRequest = `${path.posix.join(urlPath, filePath)}?action=upload&version=MINOR&createParents=true&overwrite=true`;
          // const comment = await enterMultiLineComment(`Add / Update ${pathFromUri(fileOrFolderUri)}\n\n`);
          // if (comment) {
@@ -324,7 +350,7 @@ async function copyToOppositeEndpoint(fileOrFolder) {
          requestOptions = {
             headers: {
                ...formdata.getHeaders(),
-               "X-Auth-Token": this.authToken
+               "X-Auth-Token": authToken
             }
          };
          let response;
@@ -345,6 +371,12 @@ async function copyToOppositeEndpoint(fileOrFolder) {
                } else {
                   debugger;
                   console.error('(uploadFile) Fetch request failed:', error);
+                  console.log(
+                     error?.response?.status || '',
+                     error?.response?.data?.message || '',
+                     error?.response?.data?.remediation || ''
+                  );
+                  if (error?.config?.headers) console.log('request headers:', error.config.headers);
                   throw new Error('(uploadFile) Fetch request failed:', error.message);
                }
             }
