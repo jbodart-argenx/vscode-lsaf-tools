@@ -17,8 +17,6 @@ async function activate(context) {
 		console.log("Running in a web browser, using 'os-browserify/browser' instead of 'os' module.");
 		const os = require('os-browserify/browser');
 		console.log("Running on platform:", os.platform());
-		// eslint-disable-next-line no-undef
-		// const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "Node.js";
 		// globalThis provides a standardized way to access the global object, whether in a browser, Node.js, Web Workers, or other JavaScript environments.
 		const userAgent = globalThis.navigator?.userAgent || "Node.js";
 		const platform = userAgent.includes("Windows") ? "Windows" : 
