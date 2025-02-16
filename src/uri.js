@@ -23,11 +23,17 @@ async function getKnownSchemes() {
 }
 
 function isValidSchemeFormat(scheme) {
+   if (Array.isArray(scheme)) {
+      return scheme.map(isValidSchemeFormat);
+   }
    const schemeRegex = /^[a-zA-Z][a-zA-Z0-9+.-]*$/;
    return schemeRegex.test(scheme);
 }
 
 async function isValidUri(uriString) {
+   if (Array.isArray(uriString)) {
+      return Promise.all(uriString.map(isValidUri));
+   }
    const knownSchemes = await getKnownSchemes();
    try {
       const url = new URL(uriString);
@@ -39,6 +45,9 @@ async function isValidUri(uriString) {
 }
 
 function isRelativeUri(uriString) {
+   if (Array.isArray(uriString)) {
+      return uriString.map(isRelativeUri);
+   }
    try {
       const uri = new URL(uriString, 'http://example.com');
       let isRelative = false;
@@ -52,6 +61,9 @@ function isRelativeUri(uriString) {
 }
 
 function resolveUri(relativeUri, baseUri) {
+   if (Array.isArray(relativeUri)) {
+      return relativeUri.map(uri => resolveUri(uri, baseUri));
+   }
    if (!baseUri) {
       baseUri = getBaseUri();
    }
@@ -65,6 +77,9 @@ function resolveUri(relativeUri, baseUri) {
 }
 
 function uriFromString(param) {
+   if (Array.isArray(param)) {
+      return param.map(uriFromString);
+   }
    if (param instanceof vscode.Uri) {
       return param;
    }
@@ -90,6 +105,9 @@ function uriFromString(param) {
 }
 
 function pathFromUri(uri, dropScheme = false) {
+   if (Array.isArray(uri)) {
+      return uri.map(pathFromUri);
+   }
    if (typeof uri === 'string') {
       if (uri === '') return uri;
       uri = uriFromString(uri);
@@ -113,8 +131,11 @@ function pathFromUri(uri, dropScheme = false) {
 }
 
 function getBaseUri(param) {
+   if (Array.isArray(param)) {
+      return param.map(getBaseUri);
+   }
    const workspaceFolders = vscode.workspace.workspaceFolders;
-   const activeEditor = vscode.window.activeTextEditor;
+   const activeEditor = vscode.window.activeTextEditor || vscode.window.activeEditor;
 
    // Use the workspace folder of the provided parameter if available
    if (param) param = uriFromString(param);
@@ -126,7 +147,7 @@ function getBaseUri(param) {
    }
 
    // Use the folder of the active file if available
-   if (activeEditor) {
+   if (activeEditor?.document?.uri) {
       const activeFileUri = activeEditor.document.uri;
       const workspaceFolder = vscode.workspace.getWorkspaceFolder(activeFileUri);
       if (workspaceFolder) {
@@ -144,6 +165,9 @@ function getBaseUri(param) {
 }
 
 async function existsUri(fileUri, type = null) {
+   if (Array.isArray(fileUri)) {
+      return Promise.all(fileUri.map(uri => existsUri(uri, type)));
+   }
    // type: vscode.FileType.File = 1 | vscode.FileType.Directory = 2 | vscode.FileType.SymbolicLink = 64
    let exists = false;
    if (fileUri != null) fileUri = uriFromString(fileUri);
