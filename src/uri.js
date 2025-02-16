@@ -49,12 +49,9 @@ function isRelativeUri(uriString) {
       return uriString.map(isRelativeUri);
    }
    try {
-      const uri = new URL(uriString, 'http://example.com');
-      let isRelative = false;
-      if (uri) {
-         isRelative = !uri.protocol;  // Check if the URI has a scheme component
-      }
-      return isRelative;
+      const uri = new URL(uriString, 'http://example.com');  // The second argument is a base URL, used to resolve the uriString if it is a relative URI.
+      // Check if the resolved URL is different from the base URL
+      return uri.origin === 'http://example.com' && uriString !== uri.href;
    } catch (e) {
       if (e) return false;
    }
@@ -85,17 +82,22 @@ function uriFromString(param) {
    }
    if (param != null && typeof param === 'string') {
       try {
+         let uri = null;
+         if (!isValidUri(param)) {
+            console.warn(`Invalid URI: ${param}`);
+            return null;
+         }
          // decide if vscode.Uri.parse or vscode.Uri.file should be used
          // if param matches a URI path, use vscode.Uri.parse
          // otherwise, use vscode.Uri.file
          if (param.match(/^[a-zA-Z]:/) && process.platform === 'win32') {
-            param = vscode.Uri.file(param.replace(/^[A-Z]:/, s => s.toLowerCase()));  // Convert windows drive letter to lowercase
+            uri = vscode.Uri.file(param.replace(/^[A-Z]:/, s => s.toLowerCase()));  // Convert windows drive letter to lowercase
          } else if (param.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/)) {
-            param = vscode.Uri.parse(param.replace(/\\/g, '/'));
+            uri = vscode.Uri.parse(param.replace(/\\/g, '/'));
          } else {
-            param = vscode.Uri.file(param);
+            uri = vscode.Uri.file(param);
          }
-         return param;
+         return uri;
       } catch (e) {
          // ignore
          if (e) return null;
