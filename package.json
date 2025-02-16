@@ -196,7 +196,9 @@
     "@types/vscode": "^1.71.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
+    "chai": "^5.2.0",
     "eslint": "^9.20.0",
+    "sinon": "^19.0.2",
     "webpack": "^5.97.1",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1"
