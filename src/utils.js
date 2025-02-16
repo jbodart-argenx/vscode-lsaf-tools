@@ -8,6 +8,9 @@ function getFileOrFolderUri(fileOrFolder) {
    if (Array.isArray(fileOrFolder)) {
       return fileOrFolder.map(getFileOrFolderUri);
    }
+   if (fileOrFolder === '') {
+      return null;
+   }
    return (fileOrFolder == null && vscode?.window?.activeTextEditor) ?
       vscode.window.activeTextEditor.document.uri :
       (fileOrFolder == null && vscode?.window?.activeEditor?.document?.uri) ?
