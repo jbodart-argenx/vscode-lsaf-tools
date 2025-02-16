@@ -322,7 +322,9 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
          uriFromString(oppositeEndpointUri).scheme  === 'file';
       if (!isOppositeEndpointUriSchemeFile) {
          if (Array.isArray(fileOrFolderUri)) {
-            comment = `Add / Update\n${(await Promise.all(fileOrFolderUri.map(async uri => await getLsafPath(uri)))).join(', \n')}\n\n`;
+            let results = await Promise.allSettled(fileOrFolderUri.map(async uri => await getLsafPath(uri)));
+            results = results.map((result, idx) => (result.status === 'fulfilled') ? result.value : pathFromUri(fileOrFolderUri[idx], true));
+            comment = `Add / Update\n${results.join(', \n')}\n\n`;
          } else {
             comment = `Add / Update ${await getLsafPath(fileOrFolderUri)}\n\n`;
          }
@@ -339,7 +341,7 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
          console.error(`Failed to copy ${fileOrFolder} to opposite endpoint: number of file or folder URIs (${fileOrFolderUri.length}) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
          return null;
       }
-      return await Promise.all(fileOrFolderUri.map((uri, idx) => copyToOppositeEndpoint(uri, oppositeEndpointUri[idx], comment)));
+      return await Promise.allSettled(fileOrFolderUri.map((uri, idx) => copyToOppositeEndpoint(uri, oppositeEndpointUri[idx], comment)));
    }
    if (!oppositeEndpointUri) {
       vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not identify opposite endpoint.`);
