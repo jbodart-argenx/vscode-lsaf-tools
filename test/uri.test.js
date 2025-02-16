@@ -135,7 +135,7 @@ suite('uriFromString', () => {
       expect(result).to.be.null;
    });
 
-   test('should return vscode.Uri for an array of valid URI strings', async () => {
+   test('should return an array of vscode.Uri elements for an array of valid URI strings', async () => {
       const uriStrings = ['http://example.com', 'https://example.com'];
       const result = uriFromString(uriStrings);
       expect(result).to.be.an('array');
@@ -155,7 +155,7 @@ suite('uriFromString', () => {
       });
    });
 
-   test('should return vscode.Uri for a valid URI object', async () => {
+   test('should return a vscode.Uri for a valid URI object', async () => {
       const uri = vscode.Uri.parse('http://example.com');
       const result = uriFromString(uri);
       expect(result).to.be.instanceOf(vscode.Uri);
