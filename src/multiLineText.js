@@ -3,12 +3,16 @@ const vscode = require("vscode");
 // This is the async function that opens a webview and collects multi-line input from the user
 // Even though the function does not use await, marking a function as async ensures it returns a promise.
 // This can be useful if the function needs to be used in a context where a promise is expected.
-async function getMultiLineText(defaultValue = '') {
+async function getMultiLineText(defaultValue = '', info) {
+   let title = "Multi-Line Input";
+   if (info && typeof info === 'string') {
+      title = info;
+   }
    return new Promise((resolve, reject) => {
       // Create and show a new webview panel
       const panel = vscode.window.createWebviewPanel(
          "multiLineInput", // Identifier for the panel
-         "Multi-Line Input", // Panel title
+         title, // Panel title
          vscode.ViewColumn.One, // Display in editor column one
          {
          enableScripts: true, // Enable JavaScript in the webview
@@ -16,7 +20,7 @@ async function getMultiLineText(defaultValue = '') {
       );
 
       // Set the content of the webview
-      panel.webview.html = getWebviewContent(defaultValue);
+      panel.webview.html = getWebviewContent(defaultValue, title);
 
       // Handle messages from the webview
       panel.webview.onDidReceiveMessage(
