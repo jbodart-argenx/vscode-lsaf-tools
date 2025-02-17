@@ -103,9 +103,9 @@ async function activate(context) {
 			const localPath = await getLocalPath(fileOrFolders || fileOrFolder);
 			if (localPath && toClipboard) {
 				try {
-					await vscode.env.clipboard.writeText(localPath.join('\n'));
-					console.log(`(getLocalPath) Local File/Folder Path(s) copied to clipboard:\n${localPath.join(',\n')}`);
-					vscode.window.showInformationMessage(`Local File/Folder Path(s) copied to clipboard:\n${localPath.join(', \n')}`);
+					await vscode.env.clipboard.writeText(Array.isArray(localPath) ? localPath.join('\n') : localPath);
+					console.log(`(getLocalPath) Local File/Folder Path(s) copied to clipboard:\n${Array.isArray(localPath) ? localPath.join(',\n') : localPath}`);
+					vscode.window.showInformationMessage(`Local File/Folder Path(s) copied to clipboard:\n${Array.isArray(localPath) ? localPath.join(', \n') : localPath}`);
 				} catch (error) {
 					vscode.window.showErrorMessage(`Error copying Local File/Folder Path(s) to clipboard: ${error.message}`);         
 					console.error(`(getLocalPath) Error copying Local File/Folder Path(s) to clipboard: ${error.message}`);         
