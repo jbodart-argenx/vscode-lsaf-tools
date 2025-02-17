@@ -178,7 +178,7 @@
     "set-main-dist": "node setMain.js dist",
     "prebuild": "npm run set-main-dist",
     "build": "webpack && npm run set-main-src",
-    "lint": "eslint .",
+    "lint": "eslint \"src/**/*.js\"",
     "pretest": "npm run lint",
     "run-lint": "node run-lint.js",
     "test": "vscode-test",
