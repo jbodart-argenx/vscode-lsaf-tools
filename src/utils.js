@@ -144,7 +144,7 @@ async function getLsafPath(fileOrFolder, getDefaultEndPointsFn = async () => get
 }
 
 
-async function getLocalPath(fileOrFolder) {
+async function getLocalPath(fileOrFolder, getDefaultEndPointsFn = async () => getDefaultEndpoints()) {
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(getLocalPath) no file or folder specified, attempting to use Active Editor document.`);
    }
@@ -155,7 +155,7 @@ async function getLocalPath(fileOrFolder) {
       return null;
    }
    // Get the local endpoint from the defaultEndpoints
-   const endpoints = getDefaultEndpoints() || [];
+   const endpoints = await getDefaultEndPointsFn() || [];
    if (endpoints) {
       // Find the local endpoints
       let localEndpoints = endpoints.filter(ep => ep.uri.scheme === 'file');
@@ -173,11 +173,12 @@ async function getLocalPath(fileOrFolder) {
       }
       const localEndpoint = (localEndpoints.length === 1) ? localEndpoints[0] : undefined;
       if (localEndpoint) {
-         let localPaths = fileOrFolderUri.map(fileOrFolderUri => {
+         let localPaths = (Array.isArray(fileOrFolderUri) ? fileOrFolderUri : [fileOrFolderUri]).map(fileOrFolderUri => {
             // Find the endpoint that matches the fileOrFolderUri
             const endpoint = endpoints.find(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
             try {            
-               const localFileOrFolderUri = vscode.Uri.joinPath(localEndpoint.uri, fileOrFolderUri.toString().replace(endpoint.uri.toString().replace(/\/$/, ''), ''));
+               const localFileOrFolderUri = vscode.Uri.joinPath(localEndpoint.uri, 
+                  (fileOrFolderUri?.toString() || '').replace((endpoint?.uri?.toString() || '').replace(/\/$/, ''), ''));
                const localPath = decodeURIComponent(localFileOrFolderUri.fsPath);
                console.log(`(getLocalPath) Local path for ${fileOrFolderUri} is: ${localPath}`);
                // vscode.window.showInformationMessage(`Local path for ${fileOrFolderUri} is: ${localPath}`);
@@ -189,33 +190,37 @@ async function getLocalPath(fileOrFolder) {
             }
          });
          vscode.window.showInformationMessage(`Local path(s) for:\n${fileOrFolderUri}\n is/are: ${localPaths.join(', \n')}`);
-         return (fileOrFolderUri.length === 1 && localPaths.length === 1) ? localPaths[0] : localPaths;
+         return ((! Array.isArray(fileOrFolderUri) || fileOrFolderUri.length === 1) &&
+            Array.isArray(localPaths) && localPaths.length === 1) ? localPaths[0] : localPaths;
       } else {      
          vscode.window.showWarningMessage(`Failed to get Local path for ${fileOrFolder}: no local endpoint found.`);
-         console.error(`(getLsafPath) Failed to get Local path for ${fileOrFolder}: no local endpoint found.`);
+         console.error(`(getLocalPath) Failed to get Local path for ${fileOrFolder}: no local endpoint found.`);
       }
    } else {
       vscode.window.showWarningMessage(`Failed to get Local path for ${fileOrFolder}: no endpoints defined.`);
-      console.error(`(getLsafPath) Failed to get Local path for ${fileOrFolder}: no endpoints defined.`);
+      console.error(`(getLocalPath) Failed to get Local path for ${fileOrFolder}: no endpoints defined.`);
    }
    return null;
 }
 
 
-async function enterMultiLineComment(defaultValue, info) {
-
+async function enterMultiLineComment(defaultValue, info, getInputFn = getMultiLineInput) {
    // vscode.window.showInformationMessage(info || `Enter a (multi-line) comment and click 'submit' when done.`);
-
-   const userInput = await getMultiLineInput(defaultValue, info);
+   let userInput;
+   try {
+      userInput = await getInputFn(defaultValue, info) || '';
+   } catch (error) {
+      if (error) userInput = '';
+   }
    let comment;
-   if (userInput.trim()) {
+   if (userInput && typeof userInput === 'string' && userInput.trim()) {
       console.log(`Comment entered: ${userInput}`);
       // vscode.window.showInformationMessage(`Comment entered: ${userInput}`);
       comment = userInput;
    } else {
       console.log('No comment provided.');
       // vscode.window.showInformationMessage('No comment provided.');
-      comment = null;
+      comment = '';
    }
    console.log('Entered comment:\n', comment);
    return comment;
@@ -522,4 +527,4 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
 } 
 
 module.exports = { getFileOrFolderUri, getLsafPath, getLocalPath, copyFileOrFolderUri,
-   getOppositeEndpointUri, copyToOppositeEndpoint, copyToClipboard};
+   getOppositeEndpointUri, copyToOppositeEndpoint, copyToClipboard, enterMultiLineComment };
