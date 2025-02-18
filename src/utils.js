@@ -282,15 +282,17 @@ async function getFileReadStreamAndCreateFormData(formdata, fileUri, filename) {
       commands = commands.filter(c => /lsaf/i.test(c) && /getFileReadStream/i.test(c));
 
       if (commands.includes('vsce-lsaf-restapi-fs.getFileReadStream')) {
-         const { Readable } = await import('stream');
+         const { Readable } = await require('stream');
          const stream = await vscode.commands.executeCommand("vsce-lsaf-restapi-fs.getFileReadStream", fileUri);
          if (stream && stream instanceof Readable) {
             formdata.append('uploadFile', stream, { filename });
             console.log('formdata:', formdata);
             return [formdata, filename];
          } else {
-            console.error('(getFormData) stream is not an instance of Readable');
-            throw new Error('(getFormData) stream is not an instance of Readable');
+            const errorMessage = '(getFormData) stream is not an instance of Readable';
+            console.error(errorMessage);
+            vscode.window.showErrorMessage(errorMessage);
+            return null;
          }
       }
    } catch (error) {
