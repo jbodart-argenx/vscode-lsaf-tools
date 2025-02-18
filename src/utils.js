@@ -227,99 +227,105 @@ async function enterMultiLineComment(defaultValue, info, getInputFn = getMultiLi
 }
 
 async function getFormData(fileUri, fileContents) {
-   let filename;
+   const filename = getFilenameFromUri(fileUri);
+   console.log('filename:', filename);
+
+   const FormData = (await import('form-data')).default;
+
+   let formdata = new FormData();
+
+   if (fileContents && fileContents instanceof Uint8Array) {
+      return await createFormDataFromContents(formdata, fileContents, filename);
+   }
+
    if (fileUri && fileUri instanceof vscode.Uri) {
-      filename = fileUri.path.split(/[\\/]/).slice(-1)[0];
+      const stream = await getFileReadStreamAndCreateFormData(formdata, fileUri, filename);
+      if (stream) {
+         return stream;
+      }
+
+      const fsFormData = createFormDataFromFileSystem(formdata, fileUri, filename);
+      if (fsFormData) {
+         return fsFormData;
+      }
+
+      return createFormDataFromWorkspace(formdata, fileUri, filename);
+   }
+
+   throw new Error(`(getFormData) Invalid fileUri: ${fileUri}`);
+}
+
+function getFilenameFromUri(fileUri) {
+   if (fileUri && fileUri instanceof vscode.Uri) {
+      return fileUri.path.split(/[\\/]/).slice(-1)[0];
    } else {
       console.warn(`(getFormData) fileUri is not a Uri: ${fileUri}`);
       vscode.window.showErrorMessage(`(getFormData) fileUri is not a Uri: ${fileUri}`);
       throw new Error(`(getFormData) fileUri is not a Uri: ${fileUri}`);
    }
-   console.log('filename:', filename);
+}
 
-   // Dynamically import modules
+async function createFormDataFromContents(formdata, fileContents, filename) {
    const { Readable } = await import('stream');
-   const FormData = (await import('form-data')).default;
+   const bufferStream = new Readable();
+   bufferStream._read = () => { };
+   bufferStream.push(fileContents);
+   bufferStream.push(null);
 
-   // const { Readable } = await require('stream');
-   // const FormData = await require('form-data');  // Node.js implementation of FormData for multipart/form-data including streams
-   let formdata = new FormData();
-   if (fileContents && fileContents instanceof Uint8Array) {
-      // Create a Buffer from the string content and convert it to a Readable Stream
-      const bufferStream = new Readable();
-      bufferStream._read = () => { }; // No operation needed for the _read method
-      bufferStream.push(fileContents); // Push the content to the stream
-      bufferStream.push(null);    // Signal end of the stream
+   formdata.append('uploadFile', bufferStream, { filename });
+   return [formdata, filename];
+}
 
-      // Append the file-like content to the FormData object with the key 'uploadFile'
-      formdata.append('uploadFile', bufferStream, { filename });
-      // formdata.append('uploadFile', new Blob([this.fileContents]), filename);    // fails in node.js because Blob is not a stream
-      return [formdata, filename];
-   }
-   if (fileUri && fileUri instanceof vscode.Uri) {
-      try {
-         let commands = await vscode.commands.getCommands();
-         console.log('commands:', commands);
-         commands = commands.filter(c => /lsaf/i.test(c));
-         console.log(commands);
-         commands = commands.filter(c =>  /getFileReadStream/i.test(c));
-         console.log('commands:', commands);
-         let stream;
-         if (commands.includes('vsce-lsaf-restapi-fs.getFileReadStream')) {
-            stream = await vscode.commands.executeCommand(
-               "vsce-lsaf-restapi-fs.getFileReadStream",
-               fileUri
-            );
-         }
-         if (stream) {
-            console.log('typeof stream:', typeof stream);
-            if (stream instanceof Readable) {   // stream is a Readable stream
-               formdata.append('uploadFile', stream, { filename });
-               console.log('formdata:', formdata);
-               return [formdata, filename];
-            } else {
-               console.error('(getFormData) stream is not an instance of Readable');
-               throw new Error('(getFormData) stream is not an instance of Readable');
-            }
+async function getFileReadStreamAndCreateFormData(formdata, fileUri, filename) {
+   try {
+      let commands = await vscode.commands.getCommands();
+      commands = commands.filter(c => /lsaf/i.test(c) && /getFileReadStream/i.test(c));
+
+      if (commands.includes('vsce-lsaf-restapi-fs.getFileReadStream')) {
+         const { Readable } = await import('stream');
+         const stream = await vscode.commands.executeCommand("vsce-lsaf-restapi-fs.getFileReadStream", fileUri);
+         if (stream && stream instanceof Readable) {
+            formdata.append('uploadFile', stream, { filename });
+            console.log('formdata:', formdata);
+            return [formdata, filename];
          } else {
-            // vscode.window.showWarningMessage(`Failed to upload file: could not read file stream.`);
-            // console.error(`(uploadFile) Failed to upload file: could not read file stream.`);
-            // return null;
-            console.log('(getFormData) Could not read file as a stream');
+            console.error('(getFormData) stream is not an instance of Readable');
+            throw new Error('(getFormData) stream is not an instance of Readable');
          }
-      }  catch (error) {
-         console.log(`(getFormData) Could not read file as a stream: ${error.message}`);
-         // vscode.window.showErrorMessage(`(getFormData) Could not read file as a stream: ${error.message}`);
-         // console.error(`(getFormData) Could not read file as a stream: ${error.message}`);
-         // return null;
       }
-      let fs;
-      if (typeof process !== 'undefined') {  // node environment
-         fs = await require('fs');
-      }
+   } catch (error) {
+      console.log(`(getFormData) Could not read file as a stream: ${error.message}`);
+   }
+   return null;
+}
+
+function createFormDataFromFileSystem(formdata, fileUri, filename) {
+   if (typeof process !== 'undefined') {
+      const fs = require('fs');
       if (fs && fileUri.scheme === 'file') {
          try {
-            formdata = new FormData();
             formdata.append('file', fs.createReadStream(fileUri.fsPath));
             return [formdata, filename];
          } catch (error) {
             console.log(`(getFormData) Could not read file as a stream: ${error.message}`);
          }
-      }   
-      try { 
-         const fileContents = await vscode.workspace.fs.readFile(fileUri);
-         // Convert Uint8Array to Buffer
-         const buffer = Buffer.from(fileContents);
-         // Append the file to the FormData
-         formdata.append('uploadFile', buffer, filename);
-         console.log('(getFormData) formdata:', formdata);
-         return [formdata, filename];
-      } catch (error) {
-         vscode.window.showErrorMessage(`(getFormData) Could not read file contents: ${error.message}`);
-         console.error(`(getFormData) Could not read file contents: ${error.message}`);
-         return null;
       }
    }
+   return null;
+}
+
+async function createFormDataFromWorkspace(formdata, fileUri, filename) {
+   try {
+      const fileContents = await vscode.workspace.fs.readFile(fileUri);
+      const buffer = Buffer.from(fileContents);
+      formdata.append('uploadFile', buffer, filename);
+      console.log('(getFormData) formdata:', formdata);
+      return [formdata, filename];
+   } catch (error) {
+      vscode.window.showErrorMessage(`(getFormData) Could not read file contents: ${error.message}`);
+      console.error(`(getFormData) Could not read file contents: ${error.message}`);
+   }
+   return null;
 }
 
 async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyComment) {
@@ -527,4 +533,7 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
 } 
 
 module.exports = { getFileOrFolderUri, getLsafPath, getLocalPath, copyFileOrFolderUri,
-   getOppositeEndpointUri, copyToOppositeEndpoint, copyToClipboard, enterMultiLineComment };
+   getOppositeEndpointUri, copyToOppositeEndpoint, copyToClipboard, enterMultiLineComment,
+   getFormData, getFilenameFromUri, createFormDataFromContents, getFileReadStreamAndCreateFormData,
+   createFormDataFromFileSystem, createFormDataFromWorkspace, copyToOppositeEndpoint
+};
