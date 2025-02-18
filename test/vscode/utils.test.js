@@ -1,5 +1,6 @@
 const sinon = require('sinon');
 const vscode = require('vscode');
+const { getOppositeEndpointUri } = require('../../src/utils.js');
 
 suite('getFileOrFolderUri', () => {
    let expect;
@@ -167,6 +168,62 @@ suite('copyFileOrFolderUri', () => {
       await copyFileOrFolderUri(null, mockGetFileOrFolderUri, mockCopyToClipboard);
       expect(mockCopyToClipboard.calledOnce).to.be.true;
       expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal([mockUri.toString()]);
+   });
+});
+
+suite('getOppositeEndpointUri', () => {
+   let expect;
+   let sandbox;
+   let mockShowInformationMessage;
+   let mockShowWarningMessage;
+   let mockShowQuickPick;
+   let mockGetFileOrFolderUri;
+   let mockGetDefaultEndpoints;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
+      mockShowWarningMessage = sandbox.stub(vscode.window, 'showWarningMessage');
+      mockShowQuickPick = sandbox.stub(vscode.window, 'showQuickPick');
+      mockGetFileOrFolderUri = sandbox.stub();
+      mockGetDefaultEndpoints = sandbox.stub();
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should show information message when fileOrFolder is not provided', async () => {
+      await getOppositeEndpointUri(null, mockGetDefaultEndpoints);
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+      expect(mockShowInformationMessage.firstCall.args[0]).to.include('no file or folder specified');
+   });
+
+   test('should return null when no endpoints are defined', async () => {
+      mockGetDefaultEndpoints.returns([]);
+      const result = await getOppositeEndpointUri('file:///path/to/file', mockGetDefaultEndpoints);
+      expect(result).to.be.null;
+      expect(mockShowWarningMessage.calledOnce).to.be.true;
+      expect(mockShowWarningMessage.firstCall.args[0]).to.include('no endpoints defined');
+   });
+
+   test('should return opposite endpoint URIs', async () => {
+      const endpoints = [
+         { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' },
+         { uri: vscode.Uri.parse('file:///endpoint2'), label: 'Endpoint 2' }
+      ];
+      mockGetDefaultEndpoints.returns(endpoints);
+      mockShowQuickPick.resolves('Endpoint 2');
+      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
+
+      const result = await getOppositeEndpointUri('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
+      expect(result).to.be.an('array');
+      expect(result[0] ? result[0].toString() : '').to.include('file:///endpoint2/path/to/file');
    });
 });
 
