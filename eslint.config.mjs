@@ -26,5 +26,15 @@ export default [{
         "no-unused-vars": "warn",
         "constructor-super": "warn",
         "valid-typeof": "warn",
-    },
-}];
+    }
+},
+{
+    files: [
+        "test/jest/*.js",
+        "test/jest-mocks/*.js"
+    ],
+    env: {
+        jest: true
+    }
+},
+];
