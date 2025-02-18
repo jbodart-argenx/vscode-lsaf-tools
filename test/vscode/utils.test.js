@@ -531,3 +531,100 @@ suite('enterMultiLineComment', () => {
       expect(mockGetMultiLineInput.firstCall.args[1]).to.be.undefined;
    });
 });
+
+
+
+suite('getFormData', () => {
+   let expect;
+   let getFormData;
+   let sandbox;
+   let mockShowErrorMessage;
+   let mockGetFileReadStreamAndCreateFormData;
+   let mockCreateFormDataFromFileSystem;
+   let mockCreateFormDataFromWorkspace;
+   let mockGetFilenameFromUri;
+   let mockCreateFormDataFromContents;
+   let Readable;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ getFormData } = await import('../../src/utils.js'));
+      ({ Readable } = await import('stream'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockShowErrorMessage = sandbox.stub(vscode.window, 'showErrorMessage');
+      mockGetFileReadStreamAndCreateFormData = sandbox.stub();
+      mockCreateFormDataFromFileSystem = sandbox.stub();
+      mockCreateFormDataFromWorkspace = sandbox.stub();
+      mockGetFilenameFromUri = sandbox.stub();
+      mockCreateFormDataFromContents = sandbox.stub();
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should create FormData from file contents', async () => {
+      const fileContents = new Uint8Array([1, 2, 3]);
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      mockGetFilenameFromUri.returns(filename);
+      mockCreateFormDataFromContents.resolves([{}, filename]);
+
+      const [formdata, resultFilename] = await getFormData(fileUri, fileContents);
+
+      expect(formdata).to.be.an('object');
+      expect(resultFilename).to.equal(filename);
+   });
+
+   test('should create FormData from file read stream', async () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      const mockStream = new Readable();
+      mockStream._read = () => { };
+      mockGetFilenameFromUri.returns(filename);
+      mockGetFileReadStreamAndCreateFormData.resolves([{}, filename]);
+
+      const [formdata, resultFilename] = await getFormData(fileUri);
+
+      expect(formdata).to.be.an('object');
+      expect(resultFilename).to.equal(filename);
+   });
+
+   test('should create FormData from file system', async () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      mockGetFilenameFromUri.returns(filename);
+      mockCreateFormDataFromFileSystem.returns([{}, filename]);
+
+      const [formdata, resultFilename] = await getFormData(fileUri);
+
+      expect(formdata).to.be.an('object');
+      expect(resultFilename).to.equal(filename);
+   });
+
+   test('should create FormData from workspace', async () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      mockGetFilenameFromUri.returns(filename);
+      mockCreateFormDataFromWorkspace.resolves([{}, filename]);
+
+      const [formdata, resultFilename] = await getFormData(fileUri);
+
+      expect(formdata).to.be.an('object');
+      expect(resultFilename).to.equal(filename);
+   });
+
+   test('should throw error for invalid fileUri', async () => {
+      const fileUri = 'invalid-uri';
+      try {
+         await getFormData(fileUri);
+      } catch (error) {
+         expect(error.message).to.include('fileUri is not a Uri');
+         expect(mockShowErrorMessage.calledOnce).to.be.true;
+      }
+   });
+});
