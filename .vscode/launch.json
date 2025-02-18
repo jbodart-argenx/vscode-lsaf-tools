@@ -28,6 +28,18 @@
 				 "${workspaceFolder}/dist/**/*.js"  // Point to the bundled JS files
 			],
 			"preLaunchTask": "set-main-dist"
-		}
+		},
+		{
+			"name": "Debug Jest Tests",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
+			"args": [
+			  "--runInBand",
+			  "--watchAll=false"
+			],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
+		  }
 	]
 }
