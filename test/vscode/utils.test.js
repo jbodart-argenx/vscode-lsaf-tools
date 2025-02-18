@@ -303,6 +303,7 @@ suite('getLsafPath', () => {
       expect(mockShowInformationMessage.firstCall.args[0]).to.include('LSAF path for file:///endpoint1/path/to/file is /path/to/file');
    });
 
+
    test('should return LSAF paths for an array of fileOrFolder', async () => {
       const endpoints = [
          { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
@@ -319,5 +320,214 @@ suite('getLsafPath', () => {
 });
 
 
+suite('getLocalPath', () => {
+   let expect;
+   let getLocalPath;
+   let sandbox;
+   let mockShowInformationMessage;
+   let mockShowWarningMessage;
+   let mockShowQuickPick;
+   let mockGetFileOrFolderUri;
+   let mockGetDefaultEndpoints;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ getLocalPath } = await import('../../src/utils.js'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
+      mockShowWarningMessage = sandbox.stub(vscode.window, 'showWarningMessage');
+      mockShowQuickPick = sandbox.stub(vscode.window, 'showQuickPick');
+      mockGetFileOrFolderUri = sandbox.stub();
+      mockGetDefaultEndpoints = sandbox.stub();
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should show information message when fileOrFolder is not provided', async () => {
+      await getLocalPath(null, mockGetDefaultEndpoints);
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+      expect(mockShowInformationMessage.firstCall.args[0]).to.include('no file or folder specified');
+   });
+
+   test('should return null when fileOrFolderUri is not retrieved', async () => {
+      mockGetFileOrFolderUri.returns(null);
+      const result = await getLocalPath('invalid-uri', mockGetDefaultEndpoints);
+      expect(result).to.be.null;
+      expect(mockShowWarningMessage.calledOnce).to.be.true;
+      expect(mockShowWarningMessage.firstCall.args[0]).to.include('no local endpoints found');
+   });
+
+   test('should return null when no endpoints are defined', async () => {
+      mockGetDefaultEndpoints.returns([]);
+      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///path/to/file'));
+      const result = await getLocalPath('file:///path/to/file', mockGetDefaultEndpoints);
+      expect(result).to.be.null;
+      expect(mockShowWarningMessage.calledOnce).to.be.true;
+      expect(mockShowWarningMessage.firstCall.args[0]).to.include('no local endpoints found');
+   });
+
+   test('should return null when no local endpoints are found', async () => {
+      const endpoints = [
+         { uri: vscode.Uri.parse('http:///endpoint1'), label: 'Endpoint 1' }
+      ];
+      mockGetDefaultEndpoints.returns(endpoints);
+      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///path/to/file'));
+      const result = await getLocalPath('file:///path/to/file', mockGetDefaultEndpoints);
+      expect(result).to.be.null;
+      expect(mockShowWarningMessage.calledOnce).to.be.true;
+      expect(mockShowWarningMessage.firstCall.args[0]).to.include('no local endpoints found');
+   });
+
+   test('should return local path when matching local endpoint is found', async () => {
+      const endpoints = [
+         { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
+      ];
+      mockGetDefaultEndpoints.returns(endpoints);
+      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
+      const result = await getLocalPath('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
+      if (process.platform === 'win32') {
+         expect(result).to.equal('\\endpoint1\\path\\to\\file');
+         expect(mockShowInformationMessage.firstCall.args[0]).to.include('Local path(s) for:\nfile:///endpoint1/path/to/file\n is/are: \\endpoint1\\path\\to\\file');
+      } else {
+         expect(result).to.equal('/endpoint1/path/to/file');
+         expect(mockShowInformationMessage.firstCall.args[0]).to.include('Local path(s) for:\nfile:///endpoint1/path/to/file\n is/are: /endpoint1/path/to/file');
+      }
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+   });
+
+   test('should return local paths below single local endpoint for an array of fileOrFolder', async () => {
+      const endpoints = [
+         { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
+      ];
+      mockGetDefaultEndpoints.returns(endpoints);
+      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
+      const fileOrFolders = ['file:///endpoint1/path/to/file1', 'file:///endpoint1/path/to/file2'];
+      const result = await getLocalPath(fileOrFolders, mockGetDefaultEndpoints);
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(2);
+      if (process.platform === 'win32') {
+         expect(result[0]).to.equal('\\endpoint1\\path\\to\\file1');
+         expect(result[1]).to.equal('\\endpoint1\\path\\to\\file2');
+      } else {
+         expect(result[0]).to.equal('/endpoint1/path/to/file1');
+         expect(result[1]).to.equal('/endpoint1/path/to/file2');
+      }
+   });
+
+   test('should return null when none of multiple local endpoints is selected', async () => {
+      const endpoints = [
+         { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' },
+         { uri: vscode.Uri.parse('file:///endpoint2'), label: 'Endpoint 2' }
+      ];
+      mockGetDefaultEndpoints.returns(endpoints);
+      mockShowQuickPick.resolves(null);
+      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
+      const result = await getLocalPath('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
+      expect(result).to.be.null;
+      expect(mockShowWarningMessage.calledOnce).to.be.true;
+      expect(mockShowWarningMessage.firstCall.args[0]).to.include('no local endpoint found');
+   });
+
+   test('should return local path below selected endpoint when one of multiple local endpoints is selected', async () => {
+      const endpoints = [
+         { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' },
+         { uri: vscode.Uri.parse('file:///endpoint2'), label: 'Endpoint 2' }
+      ];
+      mockGetDefaultEndpoints.returns(endpoints);
+      mockShowQuickPick.resolves('Endpoint 2');
+      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
+      const result = await getLocalPath('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
+      if (process.platform === 'win32') {
+         expect(result).to.equal('\\endpoint2\\path\\to\\file');
+         expect(mockShowInformationMessage.firstCall.args[0]).to.include('Local path(s) for:\nfile:///endpoint1/path/to/file\n is/are: \\endpoint2\\path\\to\\file');
+      } else {
+         expect(result).to.equal('/endpoint2/path/to/file');
+         expect(mockShowInformationMessage.firstCall.args[0]).to.include('Local path(s) for:\nfile:///endpoint1/path/to/file\n is/are: /endpoint2/path/to/file');
+      }
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+   });
+});
 
 
+
+suite('enterMultiLineComment', () => {
+   let expect;
+   let enterMultiLineComment;
+   let sandbox;
+   let mockGetMultiLineInput;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ enterMultiLineComment } = await import('../../src/utils.js'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockGetMultiLineInput = sandbox.stub();
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should return the entered comment when user input is provided', async () => {
+      const userInput = 'This is a test comment';
+      mockGetMultiLineInput.resolves(userInput);
+
+      const result = await enterMultiLineComment('default value', 'Enter your comment', mockGetMultiLineInput);
+      expect(result).to.equal(userInput);
+      expect(mockGetMultiLineInput.calledOnce).to.be.true;
+      expect(mockGetMultiLineInput.firstCall.args[0]).to.equal('default value');
+      expect(mockGetMultiLineInput.firstCall.args[1]).to.equal('Enter your comment');
+   });
+
+   test('should return null when user input is empty', async () => {
+      const userInput = '   ';
+      mockGetMultiLineInput.resolves(userInput);
+
+      const result = await enterMultiLineComment('default value', 'Enter your comment', mockGetMultiLineInput);
+      expect(result).to.equal('');
+      expect(mockGetMultiLineInput.calledOnce).to.be.true;
+      expect(mockGetMultiLineInput.firstCall.args[0]).to.equal('default value');
+      expect(mockGetMultiLineInput.firstCall.args[1]).to.equal('Enter your comment');
+   });
+
+   test('should return null when user input is not provided', async () => {
+      mockGetMultiLineInput.resolves('');
+
+      const result = await enterMultiLineComment('default value', 'Enter your comment', mockGetMultiLineInput);
+      expect(result).to.equal('');
+      expect(mockGetMultiLineInput.calledOnce).to.be.true;
+      expect(mockGetMultiLineInput.firstCall.args[0]).to.equal('default value');
+      expect(mockGetMultiLineInput.firstCall.args[1]).to.equal('Enter your comment');
+   });
+
+   test('should return the entered comment when default value is empty', async () => {
+      const userInput = 'This is a test comment';
+      mockGetMultiLineInput.resolves(userInput);
+
+      const result = await enterMultiLineComment('', 'Enter your comment', mockGetMultiLineInput);
+      expect(result).to.equal(userInput);
+      expect(mockGetMultiLineInput.calledOnce).to.be.true;
+      expect(mockGetMultiLineInput.firstCall.args[0]).to.equal('');
+      expect(mockGetMultiLineInput.firstCall.args[1]).to.equal('Enter your comment');
+   });
+
+   test('should return the entered comment when info is not provided', async () => {
+      const userInput = 'This is a test comment';
+      mockGetMultiLineInput.resolves(userInput);
+
+      const result = await enterMultiLineComment('default value', undefined, mockGetMultiLineInput);
+      expect(result).to.equal(userInput);
+      expect(mockGetMultiLineInput.calledOnce).to.be.true;
+      expect(mockGetMultiLineInput.firstCall.args[0]).to.equal('default value');
+      expect(mockGetMultiLineInput.firstCall.args[1]).to.be.undefined;
+   });
+});
