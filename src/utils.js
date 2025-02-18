@@ -18,6 +18,8 @@ function getFileOrFolderUri(fileOrFolder) {
       uriFromString(fileOrFolder);
 }
 
+
+
 async function copyFileOrFolderUri(fileOrFolder, getUriFn = getFileOrFolderUri) {
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(getOppositeEndpointUri) no file or folder specified, attempting to use Active Editor document.`);
@@ -28,18 +30,24 @@ async function copyFileOrFolderUri(fileOrFolder, getUriFn = getFileOrFolderUri) 
    } else {
       fileOrFolderUri = [getUriFn(fileOrFolder).toString()];
    }
-   if (fileOrFolderUri) {
+   await copyToClipboard(fileOrFolderUri, 'File/Folder Uri');
+}
+
+async function copyToClipboard(text, descr = "Text", copyFn = vscode.env.clipboard.writeText) {
+   // retrieve caller function
+   const caller = new Error().stack.split('\n')[2].trim().split(/ +/)[1]; //.replace(/^at .*/, '');
+   if (text) {
       try {
-         await vscode.env.clipboard.writeText(fileOrFolderUri.join('\n'));
-         console.log(`(copyFileOrFolderUri) File/Folder Uri copied to clipboard: ${fileOrFolderUri}`);
-         vscode.window.showInformationMessage(`File/Folder Uri copied to clipboard: ${fileOrFolderUri}`);
+         await copyFn(Array.isArray(text) ? text.join('\n') : text);
+         console.log(`(${caller}) ${descr} copied to clipboard: ${text}`);
+         vscode.window.showInformationMessage(`${descr} copied to clipboard: ${text}`);
       } catch (error) {
-         vscode.window.showErrorMessage(`Error copying File/Folder Uri to clipboard: ${error.message}`);         
-         console.error(`(copyFileOrFolderUri) Error copying File/Folder Uri to clipboard: ${error.message}`);         
+         vscode.window.showErrorMessage(`Error copying ${descr} to clipboard: ${error.message}`);
+         console.error(`(${caller}) Error copying ${descr} to clipboard: ${error.message}`);
       }
    } else {
-      vscode.window.showWarningMessage(`Failed to copy File/Folder Uri to clipboard: no file or folder specified.`);
-      console.error(`(copyFileOrFolderUri) Failed to copy File/Folder Uri to clipboard: no file or folder specified.`);
+      vscode.window.showWarningMessage(`Failed to copy ${descr} to clipboard: no ${descr} specified.`);
+      console.error(`(${caller}) Failed to copy ${descr} to clipboard: no ${descr} specified.`);
    }
 }
 
@@ -506,4 +514,5 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
    }
 } 
 
-module.exports = { getFileOrFolderUri, getLsafPath, getLocalPath, copyFileOrFolderUri, getOppositeEndpointUri, copyToOppositeEndpoint };
+module.exports = { getFileOrFolderUri, getLsafPath, getLocalPath, copyFileOrFolderUri,
+   getOppositeEndpointUri, copyToOppositeEndpoint, copyToClipboard};
