@@ -792,3 +792,107 @@ suite('createFormDataFromContents', () => {
 
 
 
+suite('getFileReadStreamAndCreateFormData', () => {
+   let expect;
+   let getFileReadStreamAndCreateFormData;
+   let sandbox;
+   let mockGetCommands;
+   let mockExecuteCommand;
+   let mockShowErrorMessage;
+   let Readable;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ getFileReadStreamAndCreateFormData } = await import('../../src/utils.js'));
+      ({ Readable } = await import('stream'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockGetCommands = sandbox.stub(vscode.commands, 'getCommands');
+      mockExecuteCommand = sandbox.stub(vscode.commands, 'executeCommand');
+      mockShowErrorMessage = sandbox.stub(vscode.window, 'showErrorMessage');
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should create FormData from file read stream', async () => {
+      const formdata = { append: sandbox.stub() };
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      const mockStream = new Readable();
+      mockStream._read = () => { };
+      mockGetCommands.resolves(['vsce-lsaf-restapi-fs.getFileReadStream']);
+      mockExecuteCommand.resolves(mockStream);
+
+      const [resultFormdata, resultFilename] = await getFileReadStreamAndCreateFormData(formdata, fileUri, filename);
+
+      expect(resultFormdata).to.equal(formdata);
+      expect(resultFilename).to.equal(filename);
+      expect(formdata.append.calledOnce).to.be.true;
+      expect(formdata.append.firstCall.args[0]).to.equal('uploadFile');
+      expect(formdata.append.firstCall.args[1]).to.equal(mockStream);
+      expect(formdata.append.firstCall.args[2]).to.deep.equal({ filename });
+   });
+
+   test('should return null if no matching command is found', async () => {
+      const formdata = { append: sandbox.stub() };
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      mockGetCommands.resolves([]);
+
+      const result = await getFileReadStreamAndCreateFormData(formdata, fileUri, filename);
+
+      expect(result).to.be.null;
+      expect(formdata.append.notCalled).to.be.true;
+   });
+
+   test('should return null if command execution fails', async () => {
+      const formdata = { append: sandbox.stub() };
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      mockGetCommands.resolves(['vsce-lsaf-restapi-fs.getFileReadStream']);
+      mockExecuteCommand.rejects(new Error('Command execution failed'));
+
+      const result = await getFileReadStreamAndCreateFormData(formdata, fileUri, filename);
+
+      expect(result).to.be.null;
+      expect(formdata.append.notCalled).to.be.true;
+   });
+
+   test('should throw an error if stream is not an instance of Readable', async () => {
+      const formdata = { append: sandbox.stub() };
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      mockGetCommands.resolves(['vsce-lsaf-restapi-fs.getFileReadStream']);
+      mockExecuteCommand.resolves({});
+
+      try {
+         await getFileReadStreamAndCreateFormData(formdata, fileUri, filename);
+      } catch (error) {
+         expect(error.message).to.include('stream is not an instance of Readable');
+         expect(formdata.append.notCalled).to.be.true;
+      }
+   });
+
+   test('should log an error if stream is not an instance of Readable', async () => {
+      const formdata = { append: sandbox.stub() };
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      mockGetCommands.resolves(['vsce-lsaf-restapi-fs.getFileReadStream']);
+      mockExecuteCommand.resolves({});
+
+      const result = await getFileReadStreamAndCreateFormData(formdata, fileUri, filename);
+
+      expect(result).to.be.null;
+      expect(formdata.append.notCalled).to.be.true;
+      expect(mockShowErrorMessage.calledOnce).to.be.true;
+      expect(mockShowErrorMessage.firstCall.args[0]).to.include('stream is not an instance of Readable');
+   });
+});
+
+
+
