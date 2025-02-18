@@ -95,3 +95,81 @@ suite('getFileOrFolderUri', () => {
 });
 
 
+
+suite('copyFileOrFolderUri', () => {
+   let expect;
+   let copyFileOrFolderUri;
+   let sandbox;
+   let mockShowInformationMessage;
+   let mockCopyToClipboard;
+   let mockGetFileOrFolderUri;
+
+   suiteSetup(async () => {
+      // Dynamically import chai and the function to be tested
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ copyFileOrFolderUri } = await import('../../src/utils.js'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
+      mockCopyToClipboard = sandbox.stub();
+      mockGetFileOrFolderUri = sandbox.stub();
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should show information message when fileOrFolder is not provided', async () => {
+      await copyFileOrFolderUri(null, mockGetFileOrFolderUri, mockCopyToClipboard);
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+      expect(mockShowInformationMessage.firstCall.args[0]).to.include('no file or folder specified');
+   });
+
+   test('should call copyToClipboard with URIs when fileOrFolder is an array of strings', async () => {
+      const uris = ['file:///path/to/file1', 'file:///path/to/file2'];
+      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
+      await copyFileOrFolderUri(uris, mockGetFileOrFolderUri, mockCopyToClipboard);
+      expect(mockCopyToClipboard.calledOnce).to.be.true;
+      expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal(uris);
+   });
+
+   test('should call copyToClipboard with URIs when fileOrFolder is a single string', async () => {
+      const uri = 'file:///path/to/file';
+      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
+      await copyFileOrFolderUri(uri, mockGetFileOrFolderUri, mockCopyToClipboard);
+      expect(mockCopyToClipboard.calledOnce).to.be.true;
+      expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal([uri]);
+   });
+
+   test('should call copyToClipboard with URIs when fileOrFolder is an array of vscode.Uri', async () => {
+      const uris = [vscode.Uri.file('/path/to/file1'), vscode.Uri.file('/path/to/file2')];
+      mockGetFileOrFolderUri.callsFake(uri => uri);
+      await copyFileOrFolderUri(uris, mockGetFileOrFolderUri, mockCopyToClipboard);
+      expect(mockCopyToClipboard.calledOnce).to.be.true;
+      expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal(uris.map(uri => uri.toString()));
+   });
+
+   test('should call copyToClipboard with URIs when fileOrFolder is a single vscode.Uri', async () => {
+      const uri = vscode.Uri.file('/path/to/file');
+      mockGetFileOrFolderUri.callsFake(uri => uri);
+      await copyFileOrFolderUri(uri, mockGetFileOrFolderUri, mockCopyToClipboard);
+      expect(mockCopyToClipboard.calledOnce).to.be.true;
+      expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal([uri.toString()]);
+   });
+
+   test('should call copyToClipboard with active editor URI when fileOrFolder is not provided and activeTextEditor is defined', async () => {
+      const mockUri = vscode.Uri.file('/path/to/active/file');
+      sandbox.stub(vscode.window, 'activeTextEditor').value({ document: { uri: mockUri } });
+      mockGetFileOrFolderUri.callsFake(() => mockUri);
+      await copyFileOrFolderUri(null, mockGetFileOrFolderUri, mockCopyToClipboard);
+      expect(mockCopyToClipboard.calledOnce).to.be.true;
+      expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal([mockUri.toString()]);
+   });
+});
+
+
+
+

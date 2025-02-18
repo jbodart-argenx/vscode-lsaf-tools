@@ -20,17 +20,18 @@ function getFileOrFolderUri(fileOrFolder) {
 
 
 
-async function copyFileOrFolderUri(fileOrFolder, getUriFn = getFileOrFolderUri) {
+async function copyFileOrFolderUri(fileOrFolder, getUriFn = getFileOrFolderUri, copyFn = copyToClipboard) {
    if (!fileOrFolder) {
-      vscode.window.showInformationMessage(`(getOppositeEndpointUri) no file or folder specified, attempting to use Active Editor document.`);
+      vscode.window.showInformationMessage(`(copyFileOrFolderUri) no file or folder specified, attempting to use Active Editor document.`);
    }
    let fileOrFolderUri;
    if (Array.isArray(fileOrFolder)) {
-      fileOrFolderUri = fileOrFolder.map(getUriFn).map(uri => uri.toString());
+      fileOrFolderUri = fileOrFolder.map(getUriFn).map(uri => uri ? uri.toString() : '');
    } else {
-      fileOrFolderUri = [getUriFn(fileOrFolder).toString()];
+      const uri = getUriFn(fileOrFolder);
+      fileOrFolderUri = uri ? [uri.toString()] : [''];
    }
-   await copyToClipboard(fileOrFolderUri, 'File/Folder Uri');
+   await copyFn(fileOrFolderUri, 'File/Folder Uri');
 }
 
 async function copyToClipboard(text, descr = "Text", copyFn = vscode.env.clipboard.writeText) {
