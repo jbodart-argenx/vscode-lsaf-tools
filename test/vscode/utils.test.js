@@ -628,3 +628,167 @@ suite('getFormData', () => {
       }
    });
 });
+
+
+
+suite('getFilenameFromUri', () => {
+   let expect;
+   let getFilenameFromUri;
+   let sandbox;
+   let mockShowErrorMessage;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ getFilenameFromUri } = await import('../../src/utils.js'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockShowErrorMessage = sandbox.stub(vscode.window, 'showErrorMessage');
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should return the filename from a valid vscode.Uri', () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const result = getFilenameFromUri(fileUri);
+      expect(result).to.equal('file.txt');
+   });
+
+   test('should return the filename from a valid vscode.Uri with backslashes', () => {
+      const fileUri = vscode.Uri.file('C:\\path\\to\\file.txt');
+      const result = getFilenameFromUri(fileUri);
+      expect(result).to.equal('file.txt');
+   });
+
+   test('should throw an error and show error message when fileUri is not a vscode.Uri', () => {
+      const invalidUri = 'invalid-uri';
+      try {
+         getFilenameFromUri(invalidUri);
+      } catch (error) {
+         expect(error.message).to.include('fileUri is not a Uri');
+         expect(mockShowErrorMessage.calledOnce).to.be.true;
+      }
+   });
+
+   test('should throw an error and show error message when fileUri is null', () => {
+      try {
+         getFilenameFromUri(null);
+      } catch (error) {
+         expect(error.message).to.include('fileUri is not a Uri');
+         expect(mockShowErrorMessage.calledOnce).to.be.true;
+      }
+   });
+
+   test('should throw an error and show error message when fileUri is undefined', () => {
+      try {
+         getFilenameFromUri(undefined);
+      } catch (error) {
+         expect(error.message).to.include('fileUri is not a Uri');
+         expect(mockShowErrorMessage.calledOnce).to.be.true;
+      }
+   });
+});
+
+
+
+suite('createFormDataFromContents', () => {
+   let expect;
+   let createFormDataFromContents;
+   let sandbox;
+   let mockFormData;
+   let Readable;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ createFormDataFromContents } = await import('../../src/utils.js'));
+      ({ Readable } = await import('stream'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockFormData = {
+         append: sandbox.stub()
+      };
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should create FormData from file contents', async () => {
+      const fileContents = new Uint8Array([1, 2, 3]);
+      const filename = 'file.txt';
+
+      const [formdata, resultFilename] = await createFormDataFromContents(mockFormData, fileContents, filename);
+
+      expect(formdata).to.equal(mockFormData);
+      expect(resultFilename).to.equal(filename);
+      expect(mockFormData.append.calledOnce).to.be.true;
+      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');
+      expect(mockFormData.append.firstCall.args[2]).to.deep.equal({ filename });
+   });
+
+   test('should create a readable stream from file contents', async () => {
+      const fileContents = new Uint8Array([1, 2, 3]);
+      const filename = 'file.txt';
+
+      const [formdata, resultFilename] = await createFormDataFromContents(mockFormData, fileContents, filename);
+
+      const bufferStream = mockFormData.append.firstCall.args[1];
+      expect(bufferStream).to.be.an.instanceof(Readable);
+
+      const chunks = [];
+      bufferStream.on('data', chunk => chunks.push(chunk));
+      bufferStream.on('end', () => {
+         const result = Buffer.concat(chunks);
+         expect(result).to.deep.equal(Buffer.from(fileContents));
+      });
+
+      bufferStream.read();
+   });
+
+   test('should handle empty file contents', async () => {
+      const fileContents = new Uint8Array([]);
+      const filename = 'file.txt';
+
+      const [formdata, resultFilename] = await createFormDataFromContents(mockFormData, fileContents, filename);
+
+      expect(formdata).to.equal(mockFormData);
+      expect(resultFilename).to.equal(filename);
+      expect(mockFormData.append.calledOnce).to.be.true;
+      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');
+      expect(mockFormData.append.firstCall.args[2]).to.deep.equal({ filename });
+
+      const bufferStream = mockFormData.append.firstCall.args[1];
+      expect(bufferStream).to.be.an.instanceof(Readable);
+
+      const chunks = [];
+      bufferStream.on('data', chunk => chunks.push(chunk));
+      bufferStream.on('end', () => {
+         const result = Buffer.concat(chunks);
+         expect(result).to.deep.equal(Buffer.from(fileContents));
+      });
+
+      bufferStream.read();
+   });
+
+   test('should throw an error if fileContents is not a Uint8Array', async () => {
+      const fileContents = 'invalid-contents';
+      const filename = 'file.txt';
+
+      try {
+         await createFormDataFromContents(mockFormData, fileContents, filename);
+      } catch (error) {
+         expect(error).to.be.an.instanceof(TypeError);
+         expect(error.message).to.include('fileContents must be a Uint8Array');
+      }
+   });
+});
+
+
+
