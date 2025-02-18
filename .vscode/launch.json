@@ -15,7 +15,7 @@
 			"outFiles": [
 				"${workspaceFolder}/src/**/*.js"
 			],
-         "preLaunchTask": "set-main-src"
+         "preLaunchTask": "set-main-src and Watch"
 		},
 		{
 			"name": "Run Bundled Extension",
