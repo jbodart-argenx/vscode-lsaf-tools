@@ -52,19 +52,19 @@ async function copyToClipboard(text, descr = "Text", copyFn = vscode.env.clipboa
    }
 }
 
-async function getOppositeEndpointUri(fileOrFolder) {
+async function getOppositeEndpointUri(fileOrFolder, getDefaultEndPointsFn = async () => getDefaultEndpoints()) {
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(getOppositeEndpointUri) no file or folder specified, attempting to use Active Editor document.`);
    }
    const fileOrFolders = (Array.isArray(fileOrFolder)) ? fileOrFolder : [fileOrFolder];
-   const fileOrFolderUris = fileOrFolders.map(getFileOrFolderUri);
+   const fileOrFolderUris = fileOrFolders.map(getFileOrFolderUri).map(uri => uri ? uri : '');
    if (! fileOrFolderUris || !(Array.isArray(fileOrFolderUris)) || fileOrFolderUris.length === 0) {
       vscode.window.showWarningMessage(`Failed to get opposite endpoint for ${fileOrFolders}: could not retrieve file or folder URI.`);
       console.error(`(getOppositeEndpointUri) Failed to get opposite endpoint for ${fileOrFolders}: could not retrieve file or folder URI.`);
       return null;
    }
    // Get the opposite endpoint from the defaultEndpoints
-   const endpoints = getDefaultEndpoints() || [];
+   const endpoints = await getDefaultEndPointsFn() || [];
    if (endpoints && Array.isArray(endpoints) && endpoints.length > 0) {
       // Find the endpoints that match and don't match the fileOrFolderUri
       let endpointIndexes = fileOrFolderUris.map(uri => endpoints.findIndex(ep => (uri.toString() || '').startsWith(ep.uri.toString())));
@@ -83,12 +83,16 @@ async function getOppositeEndpointUri(fileOrFolder) {
          const otherEndpointUris = fileOrFolderUris.map((fileOrFolderUri, idx) => {
             const endpointIndex = endpointIndexes[idx];
             const endpoint1 = endpoints[endpointIndex];
+            if (endpoint1) {
             // const endpoint1RelPath = fileOrFolderUri.toString().replace(endpoint1.uri.toString(), '').replace(/^\//, '');
-            const endpoint1RelPath = pathFromUri(fileOrFolderUri).replace(pathFromUri(endpoint1.uri), '').replace(/^\//, '');
+               const endpoint1RelPath = pathFromUri(fileOrFolderUri).replace(pathFromUri(endpoint1.uri), '').replace(/^\//, '');
 
-            const otherEndpointUri = vscode.Uri.joinPath(otherEndpoint.uri, endpoint1RelPath);
-            console.log(`(getOppositeEndpoint) Opposite endpoint for: ${fileOrFolderUri} is: ${otherEndpointUri}`);
-            return otherEndpointUri;
+               const otherEndpointUri = vscode.Uri.joinPath(otherEndpoint.uri, endpoint1RelPath);
+               console.log(`(getOppositeEndpoint) Opposite endpoint for: ${fileOrFolderUri} is: ${otherEndpointUri}`);
+               return otherEndpointUri;
+            } else {
+               return null;
+            }
          });
          vscode.window.showInformationMessage(`Opposite endpoint(s) for:\n ${fileOrFolderUris.join(', \n')}\nis/are:\n${otherEndpointUris.join(', \n')}`);
          return otherEndpointUris;
