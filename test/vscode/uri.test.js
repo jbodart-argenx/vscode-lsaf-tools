@@ -11,7 +11,7 @@ suite('isValidUri', () => {
       // Dynamically import chai and the function to be tested
       const chai = await import('chai');
       expect = chai.expect;
-      ({ isValidUri } = await import('../src/uri.js'));
+      ({ isValidUri } = await import('../../src/uri.js'));
    });
 
    setup(() => {
@@ -82,7 +82,7 @@ suite('uriFromString', () => {
       // Dynamically import chai and the function to be tested
       const chai = await import('chai');
       expect = chai.expect;
-      ({ uriFromString } = await import('../src/uri.js'));
+      ({ uriFromString } = await import('../../src/uri.js'));
    });
 
    setup(() => {
@@ -189,7 +189,7 @@ suite('getBaseUri', () => {
    suiteSetup(async () => {
       const chai = await import('chai');
       expect = chai.expect;
-      ({ getBaseUri, uriFromString } = await import('../src/uri.js'));
+      ({ getBaseUri, uriFromString } = await import('../../src/uri.js'));
    });
 
    setup(() => {
@@ -307,7 +307,7 @@ suite('pathFromUri', () => {
    suiteSetup(async () => {
       const chai = await import('chai');
       expect = chai.expect;
-      ({ pathFromUri, uriFromString } = await import('../src/uri.js'));
+      ({ pathFromUri, uriFromString } = await import('../../src/uri.js'));
    });
 
    setup(() => {

@@ -1,5 +1,8 @@
 import { defineConfig } from '@vscode/test-cli';
 
 export default defineConfig({
-	files: 'test/**/*.test.js',
+  files: 'test/vscode/**/*.test.js',
+  extensionDevelopmentPath: '.',
+  // launchArgs: ['--disable-extensions'],
+  launchTestsTimeout: 30000
 });
