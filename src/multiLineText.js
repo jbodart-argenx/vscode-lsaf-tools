@@ -36,9 +36,9 @@ async function getMultiLineText(defaultValue = '', info) {
          undefined
       );
 
-      // If the panel is closed without submitting, reject the promise
+      // If the panel is closed without submitting, resolve the promise with an empty string
       panel.onDidDispose(() => {
-         reject("Input cancelled");
+         resolve('');
       });
    });
 }
