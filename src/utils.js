@@ -18,15 +18,15 @@ function getFileOrFolderUri(fileOrFolder) {
       uriFromString(fileOrFolder);
 }
 
-async function copyFileOrFolderUri(fileOrFolder) {
+async function copyFileOrFolderUri(fileOrFolder, getUriFn = getFileOrFolderUri) {
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(getOppositeEndpointUri) no file or folder specified, attempting to use Active Editor document.`);
    }
    let fileOrFolderUri;
    if (Array.isArray(fileOrFolder)) {
-      fileOrFolderUri = fileOrFolder.map(getFileOrFolderUri).map(uri => uri.toString());
+      fileOrFolderUri = fileOrFolder.map(getUriFn).map(uri => uri.toString());
    } else {
-      fileOrFolderUri = [getFileOrFolderUri(fileOrFolder).toString];
+      fileOrFolderUri = [getUriFn(fileOrFolder).toString()];
    }
    if (fileOrFolderUri) {
       try {
