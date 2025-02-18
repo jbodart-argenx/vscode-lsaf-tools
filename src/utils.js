@@ -107,9 +107,11 @@ async function getOppositeEndpointUri(fileOrFolder, getDefaultEndPointsFn = asyn
    return null;
 }
 
-async function getLsafPath(fileOrFolder) {
+async function getLsafPath(fileOrFolder, getDefaultEndPointsFn = async () => getDefaultEndpoints()) {
    if (Array.isArray(fileOrFolder)) {
-      return Promise.all(fileOrFolder.map(getLsafPath));
+      let results = await Promise.allSettled(fileOrFolder.map(fileOrFolder => getLsafPath(fileOrFolder, getDefaultEndPointsFn)));      
+      results = results.map((result) => (result.status === 'fulfilled') ? result.value : null);
+      return results;
    }
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(getLsafPath) no file or folder specified, attempting to use Active Editor document.`);
@@ -121,7 +123,7 @@ async function getLsafPath(fileOrFolder) {
       return null;
    }
    // Get the opposite endpoint from the defaultEndpoints
-   const endpoints = getDefaultEndpoints() || [];
+   const endpoints = await getDefaultEndPointsFn() || [];
    if (endpoints) {
       // Find the endpoint that matches the fileOrFolderUri
       const endpoint = endpoints.find(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
