@@ -61,17 +61,10 @@ async function activate(context) {
 	const getOppositeEndpointUriCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.getOppositeEndpointUri",
 		async (fileOrFolder, fileOrFolders, toClipboard = true) => {
-			const { getOppositeEndpointUri } = await require('./utils.js');
+			const { getOppositeEndpointUri, copyToClipboard } = await require('./utils.js');
 			let oppositeEndpointUris = await getOppositeEndpointUri(fileOrFolders || [fileOrFolder]);
-			if (oppositeEndpointUris && toClipboard) {
-				try {
-					await vscode.env.clipboard.writeText(oppositeEndpointUris.join('\n'));
-					console.log(`(getOppositeEndpointUri) Opposite File/Folder Uri(s) copied to clipboard:\n${oppositeEndpointUris.join('\n')}`);
-					vscode.window.showInformationMessage(`Opposite File/Folder Uri(s) copied to clipboard:\n${oppositeEndpointUris.join(', \n')}`);
-				} catch (error) {
-					vscode.window.showErrorMessage(`Error copying Opposite File/Folder Uri to clipboard: ${error.message}`);         
-					console.error(`(getOppositeEndpointUri) Error copying Opposite File/Folder Uri to clipboard: ${error.message}`);         
-				}
+			if (toClipboard) {
+				copyToClipboard(oppositeEndpointUris, "File/Folder Uri(s)");
 			}
 			return oppositeEndpointUris;
 		}
@@ -99,17 +92,10 @@ async function activate(context) {
 	const getLocalFilePathCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.getLocalFilePath",
 		async (fileOrFolder, fileOrFolders, toClipboard = true) => {
-			const { getLocalPath } = await require('./utils.js');
+			const { getLocalPath, copyToClipboard } = await require('./utils.js');
 			const localPath = await getLocalPath(fileOrFolders || fileOrFolder);
-			if (localPath && toClipboard) {
-				try {
-					await vscode.env.clipboard.writeText(Array.isArray(localPath) ? localPath.join('\n') : localPath);
-					console.log(`(getLocalPath) Local File/Folder Path(s) copied to clipboard:\n${Array.isArray(localPath) ? localPath.join(',\n') : localPath}`);
-					vscode.window.showInformationMessage(`Local File/Folder Path(s) copied to clipboard:\n${Array.isArray(localPath) ? localPath.join(', \n') : localPath}`);
-				} catch (error) {
-					vscode.window.showErrorMessage(`Error copying Local File/Folder Path(s) to clipboard: ${error.message}`);         
-					console.error(`(getLocalPath) Error copying Local File/Folder Path(s) to clipboard: ${error.message}`);         
-				}
+			if (toClipboard) {
+				copyToClipboard(localPath, "Local File/Folder Path(s)");
 			}
 			return localPath;
 		}
