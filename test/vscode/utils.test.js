@@ -229,4 +229,95 @@ suite('getOppositeEndpointUri', () => {
 
 
 
+suite('getLsafPath', () => {
+   let expect;
+   let getLsafPath;
+   let sandbox;
+   let mockShowInformationMessage;
+   let mockShowWarningMessage;
+   let mockGetFileOrFolderUri;
+   let mockGetDefaultEndpoints;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ getLsafPath } = await import('../../src/utils.js'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
+      mockShowWarningMessage = sandbox.stub(vscode.window, 'showWarningMessage');
+      mockGetFileOrFolderUri = sandbox.stub();
+      mockGetDefaultEndpoints = sandbox.stub();
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should show information message when fileOrFolder is not provided', async () => {
+      await getLsafPath(null, mockGetDefaultEndpoints);
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+      expect(mockShowInformationMessage.firstCall.args[0]).to.include('no file or folder specified');
+   });
+
+   test('should return null when fileOrFolderUri is not retrieved', async () => {
+      mockGetFileOrFolderUri.returns(null);
+      const result = await getLsafPath('invalid-uri', mockGetDefaultEndpoints);
+      expect(result).to.be.null;
+      expect(mockShowWarningMessage.calledOnce).to.be.true;
+      expect(mockShowWarningMessage.firstCall.args[0]).to.include('no matching endpoint found');
+   });
+
+   test('should return null when no endpoints are defined', async () => {
+      mockGetDefaultEndpoints.returns([]);
+      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///path/to/file'));
+      const result = await getLsafPath('file:///path/to/file', mockGetDefaultEndpoints);
+      expect(result).to.be.null;
+      expect(mockShowWarningMessage.calledOnce).to.be.true;
+      expect(mockShowWarningMessage.firstCall.args[0]).to.include('no matching endpoint found');
+   });
+
+   test('should return null when no matching endpoint is found', async () => {
+      const endpoints = [
+         { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
+      ];
+      mockGetDefaultEndpoints.returns(endpoints);
+      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///path/to/file'));
+      const result = await getLsafPath('file:///path/to/file', mockGetDefaultEndpoints);
+      expect(result).to.be.null;
+      expect(mockShowWarningMessage.calledOnce).to.be.true;
+      expect(mockShowWarningMessage.firstCall.args[0]).to.include('no matching endpoint found');
+   });
+
+   test('should return LSAF path when matching endpoint is found', async () => {
+      const endpoints = [
+         { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
+      ];
+      mockGetDefaultEndpoints.returns(endpoints);
+      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
+      const result = await getLsafPath('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
+      expect(result).to.equal('/path/to/file');
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+      expect(mockShowInformationMessage.firstCall.args[0]).to.include('LSAF path for file:///endpoint1/path/to/file is /path/to/file');
+   });
+
+   test('should return LSAF paths for an array of fileOrFolder', async () => {
+      const endpoints = [
+         { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
+      ];
+      mockGetDefaultEndpoints.returns(endpoints);
+      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
+      const fileOrFolders = ['file:///endpoint1/path/to/file1', 'file:///endpoint1/path/to/file2'];
+      const result = await getLsafPath(fileOrFolders, mockGetDefaultEndpoints);
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(2);
+      expect(result[0]).to.equal('/path/to/file1');
+      expect(result[1]).to.equal('/path/to/file2');
+   });
+});
+
+
+
 
