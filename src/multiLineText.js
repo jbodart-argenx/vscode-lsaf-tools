@@ -52,6 +52,7 @@ async function getMultiLineText(defaultValue = '', info, getWebviewContent = get
 async function showMultiLineText(textValue = '', title = "Text Content", header = "", buttonLabel = "Dismiss",
                                  preserveWhitespace = true, getWebviewContent = getWebviewContent) {
    const editable = false;
+   // eslint-disable-next-line no-unused-vars
    return new Promise((resolve, reject) => {
       // Create and show a new webview panel
       const panel = vscode.window.createWebviewPanel(
