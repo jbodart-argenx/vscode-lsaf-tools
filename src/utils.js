@@ -332,14 +332,15 @@ async function createFormDataFromWorkspace(formdata, fileUri, filename, readFile
    }
 }
 
-async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyComment) {
+async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComment, getFileOrFolderUri = getFileOrFolderUri,
+                                       getOppositeEndpointUri = getOppositeEndpointUri, fs = vscode.workspace.fs, logger = console) {
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(copyToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
    const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
    if (!fileOrFolderUri) {
       vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
-      console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
+      logger.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
       return null;
    }
    let oppositeEndpointUri;
@@ -348,6 +349,15 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
    } else {
       oppositeEndpointUri = await getOppositeEndpointUri(fileOrFolder);
    }
+   if (Array.isArray(oppositeEndpointUri) && oppositeEndpointUri.length <= 1) {
+      oppositeEndpointUri = oppositeEndpointUri[0]; // Assuming we only need the first URI for single file/folder copy
+   }
+   if (!oppositeEndpointUri) {
+      vscode.window.showWarningMessage(`No opposite endpoint specified.`);
+      logger.error(`(copyToOppositeEndpoint) No opposite endpoint specified.`);
+      return null;
+   }
+   
    let comment;
    if (copyComment === undefined) {
       const isOppositeEndpointUriSchemeFile = (Array.isArray(oppositeEndpointUri)) ? 
@@ -366,40 +376,43 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
    } else {
       comment = copyComment;
    }
-   console.log('comment:', comment);
+   logger.log('comment:', comment);
    if (Array.isArray(fileOrFolderUri)) {
       if (!(Array.isArray(oppositeEndpointUri))) oppositeEndpointUri = [oppositeEndpointUri];
       if (fileOrFolderUri.length !== oppositeEndpointUri.length) {
-         vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: number of file or folder URIs (${fileOrFolderUri.length}) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
-         console.error(`Failed to copy ${fileOrFolder} to opposite endpoint: number of file or folder URIs (${fileOrFolderUri.length}) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
+         vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: number of file or folder URIs (${fileOrFolderUri.length
+         }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
+         logger.error(`Failed to copy ${fileOrFolder} to opposite endpoint: number of file or folder URIs (${fileOrFolderUri.length
+         }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
          return null;
       }
-      return await Promise.allSettled(fileOrFolderUri.map((uri, idx) => copyToOppositeEndpoint(uri, oppositeEndpointUri[idx], comment)));
+      return await Promise.allSettled(fileOrFolderUri.map((uri, idx) => copyToOppositeEndpoint(uri, oppositeEndpointUri[idx], comment,
+         getFileOrFolderUri, getOppositeEndpointUri, fs, logger)));
    }
    if (!oppositeEndpointUri) {
       vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not identify opposite endpoint.`);
-      console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not identify opposite endpoint.`);
+      logger.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not identify opposite endpoint.`);
       return null;
    }
-   console.log(`(copyToOppositeEndpoint) Copying ${fileOrFolderUri} to ${oppositeEndpointUri}`);
+   logger.log(`(copyToOppositeEndpoint) Copying ${fileOrFolderUri} to ${oppositeEndpointUri}`);
    if (oppositeEndpointUri.scheme === 'file') {
-      const stat = await vscode.workspace.fs.stat(fileOrFolderUri);
+      const stat = await fs.stat(fileOrFolderUri);
       if (stat.type & vscode.FileType.Directory) {
          // Copy folder to local endpoint
          debugger;
          vscode.window.showWarningMessage(`Copying folders to local endpoint not yet implemented.`);
       } else if (stat.type & vscode.FileType.File) {
          try {
-            await vscode.workspace.fs.copy(fileOrFolderUri, oppositeEndpointUri, { overwrite: true });
+            await fs.copy(fileOrFolderUri, oppositeEndpointUri, { overwrite: true });
             vscode.window.showInformationMessage(`Copied ${fileOrFolderUri} to ${oppositeEndpointUri}`);
-            console.log(`(copyToOppositeEndpoint) Copied ${fileOrFolderUri} to ${oppositeEndpointUri}`);
+            logger.log(`(copyToOppositeEndpoint) Copied ${fileOrFolderUri} to ${oppositeEndpointUri}`);
          } catch (error) {
             vscode.window.showErrorMessage(`Error copying ${fileOrFolderUri} to ${oppositeEndpointUri}: ${error.message}`);
-            console.error(`(copyToOppositeEndpoint) Error copying ${fileOrFolderUri} to ${oppositeEndpointUri}: ${error.message}`);
+            logger.error(`(copyToOppositeEndpoint) Error copying ${fileOrFolderUri} to ${oppositeEndpointUri}: ${error.message}`);
          }
       } else {
          vscode.window.showWarningMessage(`Failed to copy ${fileOrFolderUri} to ${oppositeEndpointUri}: not a file or folder.`);
-         console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolderUri} to ${oppositeEndpointUri}: not a file or folder.`);
+         logger.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolderUri} to ${oppositeEndpointUri}: not a file or folder.`);
       }
    } else {
       // Upload to remote endpoint
@@ -409,13 +422,13 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
          host = `${host}.ondemand.sas.com`;
       } else {
          vscode.window.showWarningMessage(`Unexpected host: ${host} and/or scheme: ${oppositeEndpointUri.scheme}.`);
-         console.error(`(copyToOppositeEndpoint) Unexpected host: ${host} and/or scheme: ${oppositeEndpointUri.scheme}.`);
+         logger.error(`(copyToOppositeEndpoint) Unexpected host: ${host} and/or scheme: ${oppositeEndpointUri.scheme}.`);
          return null;
       }
       const authToken = await logon(host);
       if (!authToken) {
          vscode.window.showErrorMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not authenticate.`);
-         console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not authenticate.`);
+         logger.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not authenticate.`);
          return null;
       }
       const endpoints = getDefaultEndpoints() || [];
@@ -441,12 +454,12 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
             .replace(/\/lsaf\/webdav\/work\//, '/workspace/files/')
             .replace(/\/lsaf\/webdav\/repo\//, '/repository/files/')
             .replace(/\/$/, '');
-         console.log('urlPath:', urlPath);
+         logger.log('urlPath:', urlPath);
          // const filePath = decodeURI(uriFromString(fileOrFolderUri).path).replace(endpoint.uri.path, '');
          const filePath = pathFromUri(fileOrFolderUri)
             .replace(pathFromUri(endpoint.uri), '')
             .replaceAll('\\', '/');
-         console.log('filePath:', filePath);
+         logger.log('filePath:', filePath);
          let apiRequest = `${path.posix.join(urlPath, filePath)}?action=upload&version=MINOR&createParents=true&overwrite=true`;
          // const comment = await enterMultiLineComment(`Add / Update ${pathFromUri(fileOrFolderUri)}\n\n`);
          if (comment) {
@@ -467,7 +480,7 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
          let response;
          try {
             fullUrl = encodeURI(apiUrl + apiRequest);
-            console.log('(uploadFile) fullUrl:', fullUrl);
+            logger.log('(uploadFile) fullUrl:', fullUrl);
             const controller = new AbortController();
             const timeout = 10_000;
             const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -476,23 +489,23 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
                clearTimeout(timeoutId); // clear timeout when the request completes
             } catch (error) {
                if (error.code === 'ECONNABORTED') {
-                  console.error(`(uploadFile) Fetch request timed out after ${timeout / 1000} seconds.`);
+                  logger.error(`(uploadFile) Fetch request timed out after ${timeout / 1000} seconds.`);
                   throw new Error(`(uploadFile) Fetch request timed out after ${timeout / 1000} seconds.`);
                } else {
                   debugger;
-                  console.error('(uploadFile) Fetch request failed:', error);
-                  console.log(
+                  logger.error('(uploadFile) Fetch request failed:', error);
+                  logger.log(
                      error?.response?.status || '',
                      error?.response?.data?.message || '',
                      error?.response?.data?.remediation || ''
                   );
-                  if (error?.config?.headers) console.log('request headers:', error.config.headers);
+                  if (error?.config?.headers) logger.log('request headers:', error.config.headers);
                   throw new Error('(uploadFile) Fetch request failed:', error.message);
                }
             }
-            console.log('(uploadFile) response.status:', response.status, response.statusText);
+            logger.log('(uploadFile) response.status:', response.status, response.statusText);
          } catch (error) {
-            console.error(`(uploadFile) Error uploading file:`, error);
+            logger.error(`(uploadFile) Error uploading file:`, error);
             throw new Error(`(uploadFile) Error uploading file: ${error.message}`);
          }
 
@@ -500,7 +513,7 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
          let status;
          let message;
          const contentType = response.headers['content-type'];
-         console.log('(RestApi.uploadFileContents) contentType:', contentType);
+         logger.log('(RestApi.uploadFileContents) contentType:', contentType);
          if (response.headers['content-type'].match(/\bjson\b/)) {
             const data = response.data;
             status = data.status;
@@ -511,7 +524,7 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
          } else {
             result = response.data;
          }
-         console.log('(RestApi.uploadFileContents) result:', result);
+         logger.log('(RestApi.uploadFileContents) result:', result);
          if (status?.type === 'FAILURE') {
             message = `File "${filename}" upload to "${path.posix.join(urlPath, filePath)}" on ${new URL(fullUrl).hostname} failed: ` + status?.message || result;
             vscode.window.showWarningMessage(message);
@@ -519,7 +532,7 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
             message = `File "${filename}" uploaded to : ${new URL(fullUrl).hostname.split('.')[0]} ${urlPath.split('/')[1]}, ` + status?.message || result;
             vscode.window.showInformationMessage(message);
          } else {
-            console.log('result:', result);
+            logger.log('result:', result);
             message = `File "${filename}" upload result: ${result}`;
             if (/(error|fail(ed|ure))/i.test(message)) {
                vscode.window.showWarningMessage(message);
@@ -527,11 +540,11 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
                vscode.window.showInformationMessage(message);
             }
          }
-         console.log(message);
+         logger.log(message);
          
       } else {
          vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: no matching endpoint found.`);
-         console.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: no matching endpoint found.`);
+         logger.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: no matching endpoint found.`);
       }
    }
 } 
