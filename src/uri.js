@@ -5,7 +5,7 @@ const path = typeof process !== 'undefined' && process.versions && process.versi
    ? require('path') // Use native path module in Node.js environment
    : pathBrowserify; // Use path-browserify in browser environment
 
-async function getKnownSchemes() {
+function getKnownSchemes() {
    const knownSchemes = ['http', 'https', 'ftp', 'file', 'untitled', 'vscode', 'vscode-remote', 'vscode-userdata', 'data', 'lsaf-repo', 'lsaf-work'];
 
    // Check for custom schemes registered by extensions
@@ -33,11 +33,11 @@ function isValidSchemeFormat(scheme) {
    return schemeRegex.test(scheme);
 }
 
-async function isValidUri(uriString) {
+function isValidUri(uriString) {
    if (Array.isArray(uriString)) {
-      return Promise.all(uriString.map(isValidUri));
+      return uriString.map(isValidUri);
    }
-   const knownSchemes = await getKnownSchemes();
+   const knownSchemes = getKnownSchemes();
    try {
       const url = new URL(uriString);
       // Use url.protocol.slice(0, -1) to remove the trailing colon of URL the protocol component
@@ -87,23 +87,19 @@ function uriFromString(param) {
    if (param != null && typeof param === 'string') {
       try {
          let uri = null;
-         if (!isValidUri(param)) {
-            console.warn(`Invalid URI: ${param}`);
-            return null;
-         }
          // decide if vscode.Uri.parse or vscode.Uri.file should be used
          // if param matches a URI path, use vscode.Uri.parse
          // otherwise, use vscode.Uri.file
          if (param.match(/^[a-zA-Z]:/) && process.platform === 'win32') {
             uri = vscode.Uri.file(param.replace(/^[A-Z]:/, s => s.toLowerCase()));  // Convert windows drive letter to lowercase
-         } else if (param.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/)) {
-            uri = vscode.Uri.parse(param.replace(/\\/g, '/'));
+         } else if (isValidUri(param)) {
+            uri = vscode.Uri.parse(param.replace(/\\/g, '/')); 
          } else {
             uri = vscode.Uri.file(param);
          }
          return uri;
       } catch (e) {
-         // ignore
+         console.warn(`Invalid URI: ${param}`);
          if (e) return null;
       }
    }
@@ -179,7 +175,7 @@ async function existsUri(fileUri, type = null, stat = vscode.workspace.fs.stat) 
    if (fileUri != null) fileUri = uriFromString(fileUri);
    if (fileUri && fileUri instanceof vscode.Uri) {
       try {
-         let fileStat = await stat(fileUri);
+         let fileStat = await stat(fileUri);  // async operation
          if (fileStat) exists = true;
          if (type != null) exists = (fileStat.type === type);
       } catch (error) {
