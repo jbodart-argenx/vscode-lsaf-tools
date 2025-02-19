@@ -51,6 +51,7 @@ function isRelativeUri(uriString) {
    if (Array.isArray(uriString)) {
       return uriString.map(isRelativeUri);
    }
+   if (!uriString) return false;
    try {
       const uri = new URL(uriString, 'http://example.com');  // The second argument is a base URL, used to resolve the uriString if it is a relative URI.
       // Check if the resolved URL is different from the base URL
@@ -60,12 +61,12 @@ function isRelativeUri(uriString) {
    }
 }
 
-function resolveUri(relativeUri, baseUri) {
+function resolveUri(relativeUri, baseUri, getBaseUriFn = getBaseUri) {
    if (Array.isArray(relativeUri)) {
-      return relativeUri.map(uri => resolveUri(uri, baseUri));
+      return relativeUri.map(uri => resolveUri(uri, baseUri, getBaseUriFn));
    }
    if (!baseUri) {
-      baseUri = getBaseUri();
+      baseUri = getBaseUriFn();
    }
    try {
       const base = new URL(baseUri);
