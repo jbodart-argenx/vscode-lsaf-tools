@@ -23,6 +23,9 @@ async function getKnownSchemes() {
 }
 
 function isValidSchemeFormat(scheme) {
+   if (scheme === undefined || scheme === null) {
+      return false;
+   }
    if (Array.isArray(scheme)) {
       return scheme.map(isValidSchemeFormat);
    }
@@ -187,6 +190,7 @@ async function existsUri(fileUri, type = null, stat = vscode.workspace.fs.stat) 
 
 module.exports = {
    isValidUri,
+   isValidSchemeFormat,
    isRelativeUri,
    resolveUri,
    getBaseUri,
