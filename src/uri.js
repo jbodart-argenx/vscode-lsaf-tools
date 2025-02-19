@@ -166,18 +166,18 @@ function getBaseUri(param) {
    return `file://${path.resolve('./')}/`;
 }
 
-async function existsUri(fileUri, type = null) {
+async function existsUri(fileUri, type = null, stat = vscode.workspace.fs.stat) {
    if (Array.isArray(fileUri)) {
-      return Promise.all(fileUri.map(uri => existsUri(uri, type)));
+      return Promise.all(fileUri.map(uri => existsUri(uri, type, stat)));
    }
    // type: vscode.FileType.File = 1 | vscode.FileType.Directory = 2 | vscode.FileType.SymbolicLink = 64
    let exists = false;
    if (fileUri != null) fileUri = uriFromString(fileUri);
    if (fileUri && fileUri instanceof vscode.Uri) {
       try {
-         let stat = await vscode.workspace.fs.stat(fileUri);
-         exists = true;
-         if (type != null) exists = (stat.type === type);
+         let fileStat = await stat(fileUri);
+         if (fileStat) exists = true;
+         if (type != null) exists = (fileStat.type === type);
       } catch (error) {
          if (error) console.log(`Uri does not exist: ${fileUri},`, error?.code);
       }
