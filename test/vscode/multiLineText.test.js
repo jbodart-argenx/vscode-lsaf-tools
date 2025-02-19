@@ -1,6 +1,6 @@
 const sinon = require('sinon');
 const vscode = require('vscode');
-const { getWebviewContent, showMultiLineText } = require('../../src/multiLineText.js');
+const { getWebviewContent, showMultiLineText, getMultiLineText } = require('../../src/multiLineText.js');
 
 suite('getWebviewContent', () => {
    let expect;
@@ -167,6 +167,98 @@ suite('showMultiLineText', function() {
       await promise;
       expect(mockPanel.webview.html).to.include('font-family: sans-serif;');
       expect(mockPanel.webview.html).to.not.include('white-space: pre-wrap;');
+   });
+});
+
+
+
+suite('getMultiLineText', function() {
+   this.timeout(5000); // Increase the timeout for this suite
+
+   let sandbox;
+   let mockPanel;
+   let expect;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockPanel = {
+         webview: {
+            html: '',
+            onDidReceiveMessage: sandbox.stub()
+         },
+         onDidDispose: sandbox.stub(),
+         dispose: sandbox.stub()
+      };
+      sandbox.stub(vscode.window, 'createWebviewPanel').returns(mockPanel);
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should create a webview panel with the correct title', async () => {
+      const title = 'Test Title';
+      const promise = getMultiLineText('', title, getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      expect(vscode.window.createWebviewPanel.calledOnce).to.be.true;
+      const panelTitle = vscode.window.createWebviewPanel.firstCall.args[1];
+      console.log("Panel title:", panelTitle); // Add a log to debug the title
+      expect(panelTitle).to.equal(title);
+   });
+
+   test('should set the webview HTML content', async () => {
+      const textValue = 'Test Text';
+      const promise = getMultiLineText(textValue, 'Test Title', getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      expect(mockPanel.webview.html).to.include(textValue);
+   });
+
+   test('should resolve with the submitted text', async () => {
+      const textValue = 'Submitted Text';
+      const promise = getMultiLineText('', 'Test Title', getWebviewContent);
+      mockPanel.webview.onDidReceiveMessage.yield({ command: 'submitText', text: textValue });
+      const result = await promise;
+      expect(result).to.equal(textValue);
+   });
+
+   test('should reject with "Unknown command" if an unknown command is received', async () => {
+      const promise = getMultiLineText('', 'Test Title', getWebviewContent);
+      mockPanel.webview.onDidReceiveMessage.yield({ command: 'unknownCommand' });
+      try {
+         await promise;
+      } catch (error) {
+         expect(error).to.equal('Unknown command');
+      }
+   });
+
+   test('should resolve with an empty string if the panel is closed without submitting', async () => {
+      const promise = getMultiLineText('', 'Test Title', getWebviewContent);
+      mockPanel.onDidDispose.yield();
+      const result = await promise;
+      expect(result).to.equal('');
+   });
+
+   test('should use default title if info is not provided', async () => {
+      const promise = getMultiLineText('', undefined, getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      const panelTitle = vscode.window.createWebviewPanel.firstCall.args[1];
+      expect(panelTitle).to.equal('Multi-Line Input');
+   });
+
+   test('should use default title if info is not a string', async () => {
+      const promise = getMultiLineText('', {}, getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      const panelTitle = vscode.window.createWebviewPanel.firstCall.args[1];
+      expect(panelTitle).to.equal('Multi-Line Input');
    });
 });
 
