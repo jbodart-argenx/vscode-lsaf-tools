@@ -301,19 +301,22 @@ async function getFileReadStreamAndCreateFormData(formdata, fileUri, filename) {
    return null;
 }
 
-function createFormDataFromFileSystem(formdata, fileUri, filename) {
-   if (typeof process !== 'undefined') {
-      const fs = require('fs');
-      if (fs && fileUri.scheme === 'file') {
-         try {
-            formdata.append('file', fs.createReadStream(fileUri.fsPath));
-            return [formdata, filename];
-         } catch (error) {
-            console.log(`(getFormData) Could not read file as a stream: ${error.message}`);
-         }
-      }
+function createFormDataFromFileSystem(formdata, fileUri, filename, fs = require('fs'), logger = console) {
+   if (typeof process === 'undefined') {
+      return null;
    }
-   return null;
+
+   if (!fs || fileUri.scheme !== 'file') {
+      return null;
+   }
+
+   try {
+      formdata.append('file', fs.createReadStream(fileUri.fsPath));
+      return [formdata, filename];
+   } catch (error) {
+      logger.error(`(createFormDataFromFileSystem) Could not read file as a stream: ${error.message}`);
+      return null;
+   }
 }
 
 async function createFormDataFromWorkspace(formdata, fileUri, filename) {
