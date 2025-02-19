@@ -64,5 +64,110 @@ suite('getWebviewContent', () => {
    });
 });
 
+suite('showMultiLineText', function() {
+   this.timeout(5000); // Increase the timeout for this suite
+
+   let sandbox;
+   let mockPanel;
+   let expect;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockPanel = {
+         webview: {
+            html: '',
+            onDidReceiveMessage: sandbox.stub()
+         },
+         onDidDispose: sandbox.stub(),
+         dispose: sandbox.stub()
+      };
+      sandbox.stub(vscode.window, 'createWebviewPanel').returns(mockPanel);
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should create a webview panel with the correct title', async () => {
+      const title = 'Test Title';
+      const promise = showMultiLineText('', title, '', 'Dismiss', true, getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      expect(vscode.window.createWebviewPanel.calledOnce).to.be.true;
+      const panelTitle = vscode.window.createWebviewPanel.firstCall.args[1];
+      console.log("Panel title:", panelTitle); // Add a log to debug the title
+      expect(panelTitle).to.equal(title);
+   });
+
+   test('should set the webview HTML content', async () => {
+      const textValue = 'Test Text';
+      const promise = showMultiLineText(textValue, 'Test Title', '', 'Dismiss', true, getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      expect(mockPanel.webview.html).to.include(textValue);
+   });
+
+   test('should resolve with the submitted text', async () => {
+      const textValue = 'Submitted Text';
+      const promise = showMultiLineText('', 'Test Title', '', 'Dismiss', true, getWebviewContent);
+      mockPanel.webview.onDidReceiveMessage.yield({ command: 'submitText', text: textValue });
+      const result = await promise;
+      expect(result).to.equal(textValue);
+   });
+
+   test('should reject with "Dismissed" if the panel is closed without submitting', async () => {
+      const promise = showMultiLineText('', 'Test Title', '', 'Dismiss', true, getWebviewContent);
+      mockPanel.onDidDispose.yield();
+      try {
+         await promise;
+      } catch (error) {
+         expect(error).to.equal('Dismissed');
+      }
+   });
+
+   test('should use default values for optional parameters', async () => {
+      const promise = showMultiLineText('', 'Text Content', '', 'Dismiss', true, getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      expect(mockPanel.webview.html).to.include('<title>Text Content</title>');
+      expect(mockPanel.webview.html).to.include('<h2>Enter Text Content below:</h2>');
+      expect(mockPanel.webview.html).to.include('<button onclick="submitText()">Dismiss</button>');
+   });
+
+   test('should use provided values for optional parameters', async () => {
+      const textValue = 'Test Text';
+      const title = 'Test Title';
+      const header = 'Test Header';
+      const buttonLabel = 'Test Button';
+      const preserveWhitespace = false;
+      const promise = showMultiLineText(textValue, title, header, buttonLabel, preserveWhitespace, getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      expect(mockPanel.webview.html).to.include(`<title>${title}</title>`);
+      expect(mockPanel.webview.html).to.include(`<h2>${header}</h2>`);
+      expect(mockPanel.webview.html).to.include(`<button onclick="submitText()">${buttonLabel}</button>`);
+   });
+
+   test('should preserve whitespace when preserveWhitespace is true', async () => {
+      const promise = showMultiLineText('', '', '', '', true, getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      expect(mockPanel.webview.html).to.include('font-family: monospace;');
+      expect(mockPanel.webview.html).to.include('white-space: pre-wrap;');
+   });
+
+   test('should not preserve whitespace when preserveWhitespace is false', async () => {
+      const promise = showMultiLineText('', '', '', '', false, getWebviewContent);
+      mockPanel.onDidDispose.yield(); // Ensure the promise gets resolved
+      await promise;
+      expect(mockPanel.webview.html).to.include('font-family: sans-serif;');
+      expect(mockPanel.webview.html).to.not.include('white-space: pre-wrap;');
+   });
+});
 
 
