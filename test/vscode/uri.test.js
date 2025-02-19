@@ -478,3 +478,74 @@ suite('existsUri', () => {
 });
 
 
+
+suite('isValidSchemeFormat', () => {
+   let expect;
+   let isValidSchemeFormat;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ isValidSchemeFormat } = await import('../../src/uri.js'));
+   });
+
+   test('should return true for a valid scheme', () => {
+      const scheme = 'http';
+      const result = isValidSchemeFormat(scheme);
+      expect(result).to.be.true;
+   });
+
+   test('should return false for an invalid scheme', () => {
+      const scheme = '1http';
+      const result = isValidSchemeFormat(scheme);
+      expect(result).to.be.false;
+   });
+
+   test('should return true for a valid scheme with special characters', () => {
+      const scheme = 'http+test';
+      const result = isValidSchemeFormat(scheme);
+      expect(result).to.be.true;
+   });
+
+   test('should return false for a scheme with invalid characters', () => {
+      const scheme = 'http@';
+      const result = isValidSchemeFormat(scheme);
+      expect(result).to.be.false;
+   });
+
+   test('should return true for an array of valid schemes', () => {
+      const schemes = ['http', 'https', 'ftp'];
+      const result = isValidSchemeFormat(schemes);
+      expect(result).to.be.an('array');
+      result.forEach(res => {
+         expect(res).to.be.true;
+      });
+   });
+
+   test('should return false for an array with at least one invalid scheme', () => {
+      const schemes = ['http', '1https', 'ftp'];
+      const result = isValidSchemeFormat(schemes);
+      expect(result).to.be.an('array');
+      expect(result[0]).to.be.true;
+      expect(result[1]).to.be.false;
+      expect(result[2]).to.be.true;
+   });
+
+   test('should return false for an empty string', () => {
+      const scheme = '';
+      const result = isValidSchemeFormat(scheme);
+      expect(result).to.be.false;
+   });
+
+   test('should return false for a null input', () => {
+      const result = isValidSchemeFormat(null);
+      expect(result).to.be.false;
+   });
+
+   test('should return false for an undefined input', () => {
+      const result = isValidSchemeFormat(undefined);
+      expect(result).to.be.false;
+   });
+});
+
+
