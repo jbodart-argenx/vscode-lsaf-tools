@@ -1058,3 +1058,106 @@ suite('createFormDataFromWorkspace', () => {
 
 
 
+const { copyToOppositeEndpoint } = require('../../src/utils.js');
+
+suite('copyToOppositeEndpoint', () => {
+   let expect;
+   let sandbox;
+   let mockGetFileOrFolderUri;
+   let mockGetOppositeEndpointUri;
+   let mockShowInformationMessage, mockShowWarningMessage, mockShowErrorMessage;
+   let mockFs;
+   let mockLogger;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockGetFileOrFolderUri = sandbox.stub();
+      mockGetOppositeEndpointUri = sandbox.stub();
+      mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
+      mockShowWarningMessage = sandbox.stub(vscode.window, 'showWarningMessage');
+      mockShowErrorMessage = sandbox.stub(vscode.window, 'showErrorMessage');
+      mockFs = {
+         copy: sandbox.stub(),
+         stat: sandbox.stub()
+      };
+      mockLogger = {
+         error: sandbox.stub(),
+         warn: sandbox.stub(),
+         info: sandbox.stub(),
+         log: sandbox.stub()
+      };
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should show information message when fileOrFolder is not provided', async () => {
+      // const mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
+      await copyToOppositeEndpoint(null, 'oppositeEndpoint', 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+      expect(mockShowInformationMessage.firstCall.args[0]).to.include('no file or folder specified');
+   });
+
+   test('should show warning message when oppositeEndpoint is not provided', async () => {
+      const fileOrFolderUri = vscode.Uri.file('/path/to/file.txt');
+      mockGetFileOrFolderUri.returns(fileOrFolderUri);
+      mockGetOppositeEndpointUri.returns(null);
+      await copyToOppositeEndpoint('/path/to/file.txt', null, 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      expect(mockShowWarningMessage.calledOnce).to.be.true;
+      expect(mockShowWarningMessage.firstCall.args[0]).to.include('No opposite endpoint specified');
+   });
+
+   test('should copy file or folder passed as strings to opposite endpoint', async () => {
+      const fileOrFolderUri = vscode.Uri.file('/path/to/file.txt');
+      const oppositeEndpointUri = vscode.Uri.file('/path/to/opposite/file.txt');
+      mockGetFileOrFolderUri.returns(fileOrFolderUri);
+      mockGetOppositeEndpointUri.returns(oppositeEndpointUri);
+      mockFs.stat.resolves({ type: vscode.FileType.File });
+      await copyToOppositeEndpoint('/path/to/file.txt', '/path/to/opposite/file.txt', 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      expect(mockFs.copy.calledOnce).to.be.true;
+      expect(mockFs.copy.firstCall.args[0].toString()).to.equal(fileOrFolderUri.toString());
+      expect(mockFs.copy.firstCall.args[1].toString()).to.equal(oppositeEndpointUri.toString());
+      expect(mockFs.copy.firstCall.args[2]).to.deep.equal({ overwrite: true });
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+      expect(mockShowInformationMessage.firstCall.args[0]).to.include(`Copied ${fileOrFolderUri} to ${oppositeEndpointUri}`);
+   });
+   test('should copy file or folder passed as URIs to opposite endpoint', async () => {
+      const fileOrFolderUri = vscode.Uri.file('/path/to/file.txt');
+      const oppositeEndpointUri = vscode.Uri.file('/path/to/opposite/file.txt');
+      mockGetFileOrFolderUri.returns(fileOrFolderUri);
+      mockGetOppositeEndpointUri.returns(oppositeEndpointUri);
+      mockFs.stat.resolves({ type: vscode.FileType.File });
+      await copyToOppositeEndpoint(fileOrFolderUri, oppositeEndpointUri, 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      expect(mockFs.copy.calledOnce).to.be.true;
+      expect(mockFs.copy.firstCall.args[0].toString()).to.equal(fileOrFolderUri.toString());
+      expect(mockFs.copy.firstCall.args[1].toString()).to.equal(oppositeEndpointUri.toString());
+      expect(mockFs.copy.firstCall.args[2]).to.deep.equal({ overwrite: true });
+      expect(mockShowInformationMessage.calledOnce).to.be.true;
+      expect(mockShowInformationMessage.firstCall.args[0]).to.include(`Copied ${fileOrFolderUri} to ${oppositeEndpointUri}`);
+   });
+
+   test('should log and show error message if copy fails', async () => {
+      const fileOrFolderUri = vscode.Uri.file('/path/to/file.txt');
+      const oppositeEndpointUri = vscode.Uri.file('/path/to/opposite/file.txt');
+      const errorMessage = 'Error copying file';
+      mockGetFileOrFolderUri.returns(fileOrFolderUri);
+      mockGetOppositeEndpointUri.returns(oppositeEndpointUri);
+      mockFs.stat.resolves({ type: vscode.FileType.File });
+      mockFs.copy.rejects(new Error(errorMessage));
+      await copyToOppositeEndpoint(fileOrFolderUri, oppositeEndpointUri, 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      expect(mockFs.copy.calledOnce).to.be.true;
+      expect(mockLogger.error.calledOnce).to.be.true;
+      expect(mockLogger.error.firstCall.args[0]).to.include(`Error copying ${fileOrFolderUri} to ${oppositeEndpointUri}: ${errorMessage}`);
+      expect(mockShowErrorMessage.calledOnce).to.be.true;
+      expect(mockShowErrorMessage.firstCall.args[0]).to.include(`Error copying ${fileOrFolderUri} to ${oppositeEndpointUri}: ${errorMessage}`);
+   });
+});
+
+
+
