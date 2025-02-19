@@ -14,6 +14,10 @@ node_modules/**
 !node_modules/vscode
 run-lint.js
 setMain.js
+jest.config.js
+nodemon.json
 dist/**
 !dist/extension.js
 !dist/web/extension.js
+tsconfig.json
+tsconfig.web.json
