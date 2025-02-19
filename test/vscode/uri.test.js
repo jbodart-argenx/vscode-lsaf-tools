@@ -376,3 +376,105 @@ suite('pathFromUri', () => {
 });
 
 
+
+suite('existsUri', () => {
+   let expect;
+   let existsUri;
+   let sandbox;
+   let mockStat;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ existsUri } = await import('../../src/uri.js'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockStat = sandbox.stub();
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should return true for a valid file URI', async () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      mockStat.resolves({ type: vscode.FileType.File });
+
+      const result = await existsUri(fileUri, null, mockStat);
+      expect(result).to.be.true;
+   });
+
+   test('should return true for a valid directory URI', async () => {
+      const dirUri = vscode.Uri.file('/path/to/directory');
+      mockStat.resolves({ type: vscode.FileType.Directory });
+
+      const result = await existsUri(dirUri, null, mockStat);
+      expect(result).to.be.true;
+   });
+
+   test('should return false for a non-existent URI', async () => {
+      const fileUri = vscode.Uri.file('/path/to/nonexistent/file.txt');
+      mockStat.rejects(new Error('File does not exist'));
+
+      const result = await existsUri(fileUri, null, mockStat);
+      expect(result).to.be.false;
+   });
+
+   test('should return true for an array of valid URIs', async () => {
+      const uris = [vscode.Uri.file('/path/to/file1.txt'), vscode.Uri.file('/path/to/file2.txt')];
+      mockStat.onCall(0).resolves({ type: vscode.FileType.File });
+      mockStat.onCall(1).resolves({ type: vscode.FileType.File });
+
+      const result = await existsUri(uris, null, mockStat);
+      expect(result).to.be.an('array');
+      result.forEach(res => {
+         expect(res).to.be.true;
+      });
+   });
+
+   test('should return false for an array of non-existent URIs', async () => {
+      const uris = [vscode.Uri.file('/path/to/nonexistent/file1.txt'), vscode.Uri.file('/path/to/nonexistent/file2.txt')];
+      mockStat.rejects(new Error('File does not exist'));
+
+      const result = await existsUri(uris, null, mockStat);
+      expect(result).to.be.an('array');
+      result.forEach(res => {
+         expect(res).to.be.false;
+      });
+   });
+
+   test('should return true for a valid URI with a specific type', async () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      mockStat.resolves({ type: vscode.FileType.File });
+
+      const result = await existsUri(fileUri, vscode.FileType.File, mockStat);
+      expect(result).to.be.true;
+   });
+
+   test('should return false for a valid URI with a different type', async () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      mockStat.resolves({ type: vscode.FileType.Directory });
+
+      const result = await existsUri(fileUri, vscode.FileType.File, mockStat);
+      expect(result).to.be.false;
+   });
+
+   test('should return false for a null input', async () => {
+      const result = await existsUri(null, null, mockStat);
+      expect(result).to.be.false;
+   });
+
+   test('should return false for an undefined input', async () => {
+      const result = await existsUri(undefined, null, mockStat);
+      expect(result).to.be.false;
+   });
+
+   test('should return false for an invalid URI string', async () => {
+      const result = await existsUri('invalid-uri', null, mockStat);
+      expect(result).to.be.false;
+   });
+});
+
+
