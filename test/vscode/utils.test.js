@@ -994,3 +994,67 @@ suite('createFormDataFromFileSystem', () => {
 
 
 
+suite('createFormDataFromWorkspace', () => {
+   let expect;
+   let sandbox;
+   let mockFormData;
+   let mockReadFile;
+   let mockLogger;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ createFormDataFromWorkspace } = await import('../../src/utils.js'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockFormData = {
+         append: sandbox.stub()
+      };
+      mockReadFile = sandbox.stub();
+      mockLogger = {
+         error: sandbox.stub(),
+         warn: sandbox.stub(),
+         info: sandbox.stub(),
+         log: sandbox.stub()
+      };
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should create FormData from workspace file', async () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      const fileContents = Buffer.from('file contents');
+      mockReadFile.resolves(fileContents);
+
+      const [formdata, resultFilename] = await createFormDataFromWorkspace(mockFormData, fileUri, filename, mockReadFile, mockLogger);
+
+      expect(formdata).to.equal(mockFormData);
+      expect(resultFilename).to.equal(filename);
+      expect(mockFormData.append.calledOnce).to.be.true;
+      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');
+      expect(mockFormData.append.firstCall.args[1].equals(fileContents)).to.be.true;
+      expect(mockFormData.append.firstCall.args[2]).to.equal(filename);
+   });
+
+   test('should return null if readFile throws an error', async () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      const errorMessage = 'Error reading file';
+      mockReadFile.rejects(new Error(errorMessage));
+
+      const result = await createFormDataFromWorkspace(mockFormData, fileUri, filename, mockReadFile, mockLogger);
+
+      expect(result).to.be.null;
+      expect(mockFormData.append.notCalled).to.be.true;
+      expect(mockLogger.error.calledOnce).to.be.true;
+      expect(mockLogger.error.firstCall.args[0]).to.include(errorMessage);
+   });
+});
+
+
+
