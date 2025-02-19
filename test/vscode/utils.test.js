@@ -1,6 +1,7 @@
 const sinon = require('sinon');
 const vscode = require('vscode');
 const { getOppositeEndpointUri } = require('../../src/utils.js');
+const { createFormDataFromFileSystem } = require('../../src/utils.js');
 
 suite('getFileOrFolderUri', () => {
    let expect;
@@ -737,6 +738,7 @@ suite('createFormDataFromContents', () => {
       const fileContents = new Uint8Array([1, 2, 3]);
       const filename = 'file.txt';
 
+      // eslint-disable-next-line no-unused-vars
       const [formdata, resultFilename] = await createFormDataFromContents(mockFormData, fileContents, filename);
 
       const bufferStream = mockFormData.append.firstCall.args[1];
@@ -891,6 +893,102 @@ suite('getFileReadStreamAndCreateFormData', () => {
       expect(formdata.append.notCalled).to.be.true;
       expect(mockShowErrorMessage.calledOnce).to.be.true;
       expect(mockShowErrorMessage.firstCall.args[0]).to.include('stream is not an instance of Readable');
+   });
+});
+
+
+
+suite('createFormDataFromFileSystem', () => {
+   let expect;
+   let sandbox;
+   let mockFormData;
+   let mockFs;
+   let mockCreateReadStream;
+   let mockLogger;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockFormData = {
+         append: sandbox.stub()
+      };
+      mockCreateReadStream = sandbox.stub();
+      mockFs = {
+         createReadStream: mockCreateReadStream
+      };
+      mockLogger = {
+         error: sandbox.stub()
+      };
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should create FormData from file system', () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      mockCreateReadStream.returns({});
+
+      const [formdata, resultFilename] = createFormDataFromFileSystem(mockFormData, fileUri, filename, mockFs, mockLogger);
+
+      expect(formdata).to.equal(mockFormData);
+      expect(resultFilename).to.equal(filename);
+      expect(mockFormData.append.calledOnce).to.be.true;
+      expect(mockFormData.append.firstCall.args[0]).to.equal('file');
+      expect(mockFormData.append.firstCall.args[1]).to.equal(mockCreateReadStream());
+   });
+
+   test('should return null if process is undefined', () => {
+      const originalProcess = global.process;
+      delete global.process;
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+
+      const result = createFormDataFromFileSystem(mockFormData, fileUri, filename, mockFs, mockLogger);
+
+      global.process = originalProcess;
+
+      expect(result).to.be.null;
+      expect(mockFormData.append.notCalled).to.be.true;
+   });
+
+   test('should return null if fileUri scheme is not file', () => {
+      const fileUri = vscode.Uri.parse('http://path/to/file.txt');
+      const filename = 'file.txt';
+
+      const result = createFormDataFromFileSystem(mockFormData, fileUri, filename, mockFs, mockLogger);
+
+      expect(result).to.be.null;
+      expect(mockFormData.append.notCalled).to.be.true;
+   });
+
+   test('should return null if fs is not available', () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+
+      const result = createFormDataFromFileSystem(mockFormData, fileUri, filename, null, mockLogger);
+
+      expect(result).to.be.null;
+      expect(mockFormData.append.notCalled).to.be.true;
+   });
+
+   test('should log an error if createReadStream throws an error', () => {
+      const fileUri = vscode.Uri.file('/path/to/file.txt');
+      const filename = 'file.txt';
+      const errorMessage = 'Error reading file';
+      mockCreateReadStream.throws(new Error(errorMessage));
+
+      const result = createFormDataFromFileSystem(mockFormData, fileUri, filename, mockFs, mockLogger);
+
+      expect(result).to.be.null;
+      expect(mockFormData.append.notCalled).to.be.true;
+      expect(mockLogger.error.calledOnce).to.be.true;
+      expect(mockLogger.error.firstCall.args[0]).to.include(errorMessage);
    });
 });
 
