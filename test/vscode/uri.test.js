@@ -549,3 +549,164 @@ suite('isValidSchemeFormat', () => {
 });
 
 
+
+
+suite('isRelativeUri', () => {
+   let expect;
+   let isRelativeUri;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ isRelativeUri } = await import('../../src/uri.js'));
+   });
+
+   test('should return true for a relative URI', () => {
+      const uriString = 'relative/path/to/resource';
+      const result = isRelativeUri(uriString);
+      expect(result).to.be.true;
+   });
+
+   test('should return false for an absolute URI', () => {
+      const uriString = 'http://example.com/path/to/resource';
+      const result = isRelativeUri(uriString);
+      expect(result).to.be.false;
+   });
+
+   test('should return true for an array of relative URIs', () => {
+      const uriStrings = ['relative/path/one', 'another/relative/path'];
+      const result = isRelativeUri(uriStrings);
+      expect(result).to.be.an('array');
+      result.forEach(res => {
+         expect(res).to.be.true;
+      });
+   });
+
+   test('should return false for an array with at least one absolute URI', () => {
+      const uriStrings = ['relative/path', 'http://example.com/absolute/path'];
+      const result = isRelativeUri(uriStrings);
+      expect(result).to.be.an('array');
+      expect(result[0]).to.be.true;
+      expect(result[1]).to.be.false;
+   });
+
+   test('should return false for an empty string', () => {
+      const uriString = '';
+      const result = isRelativeUri(uriString);
+      expect(result).to.be.false;
+   });
+
+   test('should return false for a null input', () => {
+      const result = isRelativeUri(null);
+      expect(result).to.be.false;
+   });
+
+   test('should return false for an undefined input', () => {
+      const result = isRelativeUri(undefined);
+      expect(result).to.be.false;
+   });
+
+   test('should return false for an invalid URI string', () => {
+      const uriString = 'http://example.com:invalid-port';
+      const result = isRelativeUri(uriString);
+      expect(result).to.be.false;
+   });
+});
+
+
+
+
+suite('resolveUri', () => {
+   let expect;
+   let resolveUri;
+   let sandbox;
+   let mockGetBaseUri;
+
+   suiteSetup(async () => {
+      const chai = await import('chai');
+      expect = chai.expect;
+      ({ resolveUri } = await import('../../src/uri.js'));
+   });
+
+   setup(() => {
+      sandbox = sinon.createSandbox();
+      mockGetBaseUri = sandbox.stub();
+   });
+
+   teardown(() => {
+      sandbox.restore();
+   });
+
+   test('should resolve a relative URI against a base URI', () => {
+      const relativeUri = 'path/to/resource';
+      const baseUri = 'http://example.com/';
+      const result = resolveUri(relativeUri, baseUri, mockGetBaseUri);
+      expect(result).to.equal('http://example.com/path/to/resource');
+   });
+
+   test('should resolve a relative URI against a base URI with a path', () => {
+      const relativeUri = 'resource';
+      const baseUri = 'http://example.com/path/to/';
+      const result = resolveUri(relativeUri, baseUri, mockGetBaseUri);
+      expect(result).to.equal('http://example.com/path/to/resource');
+   });
+
+   test('should resolve an absolute URI against a base URI', () => {
+      const relativeUri = 'http://example.com/path/to/resource';
+      const baseUri = 'http://another.com/';
+      const result = resolveUri(relativeUri, baseUri, mockGetBaseUri);
+      expect(result).to.equal('http://example.com/path/to/resource');
+   });
+
+   test('should return null for an invalid relative URI', () => {
+      const relativeUri = 'http://example.com:invalid-port';
+      const baseUri = 'http://example.com/';
+      const result = resolveUri(relativeUri, baseUri, mockGetBaseUri);
+      expect(result).to.be.null;
+   });
+
+   test('should return null for an invalid base URI', () => {
+      const relativeUri = 'path/to/resource';
+      const baseUri = 'http://example.com:invalid-port';
+      const result = resolveUri(relativeUri, baseUri, mockGetBaseUri);
+      expect(result).to.be.null;
+   });
+
+   test('should resolve a relative URI against the default base URI when baseUri is not provided', () => {
+      const relativeUri = 'path/to/resource';
+      const defaultBaseUri = 'http://default.com/';
+      mockGetBaseUri.returns(defaultBaseUri);
+      const result = resolveUri(relativeUri, undefined, mockGetBaseUri);
+      expect(result).to.equal('http://default.com/path/to/resource');
+   });
+
+   test('should resolve an array of relative URIs against a base URI', () => {
+      const relativeUris = ['path/to/resource1', 'path/to/resource2'];
+      const baseUri = 'http://example.com/';
+      const result = resolveUri(relativeUris, baseUri, mockGetBaseUri);
+      expect(result).to.be.an('array');
+      expect(result[0]).to.equal('http://example.com/path/to/resource1');
+      expect(result[1]).to.equal('http://example.com/path/to/resource2');
+   });
+
+   test('should resolve an array of relative URIs against the default base URI when baseUri is not provided', () => {
+      const relativeUris = ['path/to/resource1', 'path/to/resource2'];
+      const defaultBaseUri = 'http://default.com/';
+      mockGetBaseUri.returns(defaultBaseUri);
+      const result = resolveUri(relativeUris, undefined, mockGetBaseUri);
+      expect(result).to.be.an('array');
+      expect(result[0]).to.equal('http://default.com/path/to/resource1');
+      expect(result[1]).to.equal('http://default.com/path/to/resource2');
+   });
+
+   test('should return null for an array with at least one invalid relative URI', () => {
+      const relativeUris = ['path/to/resource1', 'http://example.com:invalid-port'];
+      const baseUri = 'http://example.com/';
+      const result = resolveUri(relativeUris, baseUri, mockGetBaseUri);
+      expect(result).to.be.an('array');
+      expect(result[0]).to.equal('http://example.com/path/to/resource1');
+      expect(result[1]).to.be.null;
+   });
+});
+
+
