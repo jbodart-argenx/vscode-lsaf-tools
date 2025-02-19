@@ -3,7 +3,7 @@ const vscode = require("vscode");
 // This is the async function that opens a webview and collects multi-line input from the user
 // Even though the function does not use await, marking a function as async ensures it returns a promise.
 // This can be useful if the function needs to be used in a context where a promise is expected.
-async function getMultiLineText(defaultValue = '', info) {
+async function getMultiLineText(defaultValue = '', info, getWebviewContent = getWebviewContent) {
    let title = "Multi-Line Input";
    if (info && typeof info === 'string') {
       title = info;
@@ -19,12 +19,15 @@ async function getMultiLineText(defaultValue = '', info) {
          }
       );
 
+      console.log("Setting webview content with textValue:", defaultValue);
+
       // Set the content of the webview
       panel.webview.html = getWebviewContent(defaultValue, title);
 
       // Handle messages from the webview
       panel.webview.onDidReceiveMessage(
          (message) => {
+            console.log("Received message:", message);
             if (message.command === "submitText") {
                resolve(message.text); // Resolve the promise with the submitted text
                panel.dispose(); // Close the webview panel
@@ -43,11 +46,11 @@ async function getMultiLineText(defaultValue = '', info) {
    });
 }
 
-
 // This is the async function that opens a webview and collects multi-line input from the user
 // Even though the function does not use await, marking a function as async ensures it returns a promise.
 // This can be useful if the function needs to be used in a context where a promise is expected.
-async function showMultiLineText(textValue = '', title = "Text Content", header = "", buttonLabel = "Dismiss", preserveWhitespace = true) {
+async function showMultiLineText(textValue = '', title = "Text Content", header = "", buttonLabel = "Dismiss",
+                                 preserveWhitespace = true, getWebviewContent = getWebviewContent) {
    const editable = false;
    return new Promise((resolve, reject) => {
       // Create and show a new webview panel
@@ -59,18 +62,19 @@ async function showMultiLineText(textValue = '', title = "Text Content", header 
          enableScripts: true, // Enable JavaScript in the webview
          }
       );
+      console.log("Setting webview content with textValue:", textValue);
+      console.log("Panel created with title:", title);
 
       // Set the content of the webview
       panel.webview.html = getWebviewContent(textValue, title, header, buttonLabel, editable, preserveWhitespace);
-      
 
       // Handle messages from the webview
       panel.webview.onDidReceiveMessage(
          (message) => {
-         if (message.command === "submitText") {
-            resolve(message.text); // Resolve the promise with the submitted text
-            panel.dispose(); // Close the webview panel
-         }
+            if (message.command === "submitText") {
+               resolve(message.text); // Resolve the promise with the submitted text
+               panel.dispose(); // Close the webview panel
+            }
          },
          undefined,
          undefined
@@ -78,7 +82,8 @@ async function showMultiLineText(textValue = '', title = "Text Content", header 
 
       // If the panel is closed without submitting, reject the promise
       panel.onDidDispose(() => {
-         reject("Dismissed");
+         console.log("(showMultiLineText): Panel disposed without submitting");
+         resolve(null);
       });
    });
 }
@@ -128,10 +133,14 @@ function getWebviewContent(defaultValue, title="File Upload Comment", header=und
          </div>
 
          <script>
+            console.log("Webview loaded");
+
             const vscode = acquireVsCodeApi();
 
             function submitText() {
                const text = document.getElementById('inputText').value;
+               console.log("Submitting text:", text);
+
                vscode.postMessage({
                      command: 'submitText',
                      text: text
@@ -146,5 +155,6 @@ function getWebviewContent(defaultValue, title="File Upload Comment", header=und
 // Export the function so it can be imported in other files
 module.exports = {
    getMultiLineText,
-   showMultiLineText
+   showMultiLineText,
+   getWebviewContent
 };
