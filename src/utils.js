@@ -319,18 +319,17 @@ function createFormDataFromFileSystem(formdata, fileUri, filename, fs = require(
    }
 }
 
-async function createFormDataFromWorkspace(formdata, fileUri, filename) {
+async function createFormDataFromWorkspace(formdata, fileUri, filename, readFile = vscode.workspace.fs.readFile, logger = console) {
    try {
-      const fileContents = await vscode.workspace.fs.readFile(fileUri);
+      const fileContents = await readFile(fileUri);
       const buffer = Buffer.from(fileContents);
       formdata.append('uploadFile', buffer, filename);
-      console.log('(getFormData) formdata:', formdata);
+      logger.log('(getFormData) formdata:', formdata);
       return [formdata, filename];
    } catch (error) {
-      vscode.window.showErrorMessage(`(getFormData) Could not read file contents: ${error.message}`);
-      console.error(`(getFormData) Could not read file contents: ${error.message}`);
+      logger.error(`(getFormData) Could not read file contents: ${error.message}`);
+      return null;
    }
-   return null;
 }
 
 async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyComment) {
