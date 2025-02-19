@@ -47,36 +47,34 @@ const username = os.userInfo ? os.userInfo().username : 'default-username'; // F
 
 function getDefaultEndpoints() {
    const config = vscode.workspace.getConfiguration("vscode-lsaf-tools");
-   const endpoints = config.get('defaultEndpoints');
-   if (endpoints) {
-      return endpoints
-         .map(endpoint => {
-            if (endpoint.url) {
-               const url = new URL(endpoint.url);
-               let path = url.pathname;
-               let loc, lsafUri;
-               // "/content/66c7e5fa-58a2-4e98-9573-6ec7282f5d2f/proxy/xartest/lsaf/webdav/repo/clinical/test/indic/cdisc-pilot-0001/"
-               if (/^(?:\/content\/[\da-f-]+\/proxy\/\w+)?\/lsaf\/webdav\/(work|repo)/.test(path)) {
-                  loc = path.match(/(?:\/content\/[\da-f-]+\/proxy\/\w+)?\/lsaf\/webdav\/(work|repo)/)[1];
-                  path = path.replace(/^(?:\/content\/[\da-f-]+\/proxy\/\w+)?\/lsaf\/webdav\/(work|repo)/, '');
-                  lsafUri = `lsaf-${loc}://${url.host.split('.')[0]}${path}`;
-               }
-               const uri = endpoint.uri ?
-                  uriFromString(endpoint.uri.replace('${username}', username)) :
-                  uriFromString(lsafUri || url.protocol + '//' + url.host + path);
-               return {
-                  label: endpoint.label,
-                  uri,
-                  url: endpoint.url
-               };
-            } else {
-               return {
-                  label: endpoint.label,
-                  uri: uriFromString(endpoint.uri.replace('${username}', username))
-               };
+   const endpoints = config.get('defaultEndpoints', []);
+   return endpoints
+      .map(endpoint => {
+         if (endpoint.url) {
+            const url = new URL(endpoint.url);
+            let path = url.pathname;
+            let loc, lsafUri;
+            // "/content/66c7e5fa-58a2-4e98-9573-6ec7282f5d2f/proxy/xartest/lsaf/webdav/repo/clinical/test/indic/cdisc-pilot-0001/"
+            if (/^(?:\/content\/[\da-f-]+\/proxy\/\w+)?\/lsaf\/webdav\/(work|repo)/.test(path)) {
+               loc = path.match(/(?:\/content\/[\da-f-]+\/proxy\/\w+)?\/lsaf\/webdav\/(work|repo)/)[1];
+               path = path.replace(/^(?:\/content\/[\da-f-]+\/proxy\/\w+)?\/lsaf\/webdav\/(work|repo)/, '');
+               lsafUri = `lsaf-${loc}://${url.host.split('.')[0]}${path}`;
             }
-         });
-   }
+            const uri = endpoint.uri ?
+               uriFromString(endpoint.uri.replace('${username}', username)) :
+               uriFromString(lsafUri || url.protocol + '//' + url.host + path);
+            return {
+               label: endpoint.label,
+               uri,
+               url: endpoint.url
+            };
+         } else {
+            return {
+               label: endpoint.label,
+               uri: uriFromString(endpoint.uri.replace('${username}', username))
+            };
+         }
+      });
 }
 
 let defaultEndpoints = getDefaultEndpoints();
