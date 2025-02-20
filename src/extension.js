@@ -1,7 +1,7 @@
 const vscode = require('vscode');
 
 if (typeof self === 'undefined') {
-	global.self = global;
+	globalThis.self = globalThis;
 }
 
 let defaultEndpoints = require('./endpoints').defaultEndpoints;
