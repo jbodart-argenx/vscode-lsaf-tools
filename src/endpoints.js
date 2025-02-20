@@ -77,14 +77,16 @@ function getDefaultEndpoints() {
       });
 }
 
+let logger = console;
+
 let defaultEndpoints = getDefaultEndpoints();
-console.log('Default Endpoints:', defaultEndpoints);
+logger.log('Default Endpoints:', JSON.stringify(defaultEndpoints, null, 2));
 
 vscode.workspace.onDidChangeConfiguration((e) => {
    if (e.affectsConfiguration('vscode-lsaf-tools.defaultEndpoints')) {
       defaultEndpoints = getDefaultEndpoints();
-      console.log('Updated Default Endpoints:', defaultEndpoints);
+      logger.log('Updated Default Endpoints:', defaultEndpoints);
    }
 });
 
-module.exports = { defaultEndpoints, getDefaultEndpoints };
+module.exports = { defaultEndpoints, getDefaultEndpoints, logger };
