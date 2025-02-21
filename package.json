@@ -2,7 +2,7 @@
   "name": "vscode-lsaf-tools",
   "displayName": "vscode-lsaf-tools",
   "description": "A collection of tools for working with LSAF files",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "jbodart-argenx",
   "license": "MIT",
   "engines": {
