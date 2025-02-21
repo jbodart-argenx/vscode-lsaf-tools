@@ -3,6 +3,8 @@ const vscode = require('vscode');
 if (typeof self === 'undefined') {
 	globalThis.self = globalThis;
 }
+console.log('(vscode-lsaf-tools) Running in:', globalThis.self === globalThis ? 'Node.js' : 'Browser');
+console.log('(vscode-lsaf-tools) typeof self:', typeof self);
 
 let defaultEndpoints = require('../endpoints').defaultEndpoints;
 console.log('Default Endpoints:', defaultEndpoints);
