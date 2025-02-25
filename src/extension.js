@@ -106,8 +106,11 @@ async function activate(context) {
 	const copyToOppositeEndpointCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.copyToOppositeEndpoint",
 		async (fileOrFolder, fileOrFolders) => {
-			const { copyToOppositeEndpoint } = await require('./utils.js');
-			return copyToOppositeEndpoint(fileOrFolders || [fileOrFolder]);
+			const { copyToOppositeEndpoint, getFileOrFolderUri, getOppositeEndpointUri } = await require('./utils.js');
+			console.log(`(copyToOppositeEndpoint) fileOrFolder:`, fileOrFolder, `, fileOrFolders:`, fileOrFolders);
+			let oppositeEndpoint, copyComment;
+			return await copyToOppositeEndpoint(fileOrFolders || [fileOrFolder], oppositeEndpoint, copyComment, getFileOrFolderUri,
+				getOppositeEndpointUri);
 		}
 	);
 
