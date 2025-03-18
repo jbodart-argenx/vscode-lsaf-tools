@@ -50,6 +50,7 @@ function getDefaultEndpoints() {
    const endpoints = config.get('defaultEndpoints', []);
    return endpoints
       .map(endpoint => {
+         let uri;
          if (endpoint.url) {
             const url = new URL(endpoint.url);
             let path = url.pathname;
@@ -60,20 +61,15 @@ function getDefaultEndpoints() {
                path = path.replace(/^(?:\/content\/[\da-f-]+\/proxy\/\w+)?\/lsaf\/webdav\/(work|repo)/, '');
                lsafUri = `lsaf-${loc}://${url.host.split('.')[0]}${path}`;
             }
-            const uri = endpoint.uri ?
-               uriFromString(endpoint.uri.replace('${username}', username)) :
-               uriFromString(lsafUri || url.protocol + '//' + url.host + path);
-            return {
-               label: endpoint.label,
-               uri,
-               url: endpoint.url
-            };
+            uri = uriFromString(lsafUri || url.protocol + '//' + url.host + path);
          } else {
-            return {
-               label: endpoint.label,
-               uri: uriFromString(endpoint.uri.replace('${username}', username))
-            };
+            uri = uriFromString(endpoint.uri.replace('${username}', username));
          }
+         return {
+            label: endpoint.label,
+            uri,
+            url: endpoint.url
+         };
       });
 }
 
@@ -85,7 +81,7 @@ logger.log('Default Endpoints:', JSON.stringify(defaultEndpoints, null, 2));
 vscode.workspace.onDidChangeConfiguration((e) => {
    if (e.affectsConfiguration('vscode-lsaf-tools.defaultEndpoints')) {
       defaultEndpoints = getDefaultEndpoints();
-      logger.log('Updated Default Endpoints:', defaultEndpoints);
+      logger.log('Updated Default Endpoints:', JSON.stringify(defaultEndpoints, null, 2));
    }
 });
 
