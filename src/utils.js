@@ -11,6 +11,23 @@ function getFileOrFolderUri(fileOrFolder) {
    if (fileOrFolder === '') {
       return null;
    }
+   let editor, document;
+   // test if fileOrFolder is an object and has properties groupId and editorIndex
+   if (fileOrFolder && typeof fileOrFolder === 'object' && typeof fileOrFolder.groupId === 'number' && typeof fileOrFolder.editorIndex === 'number') {
+      // editor = vscode.window.visibleTextEditors.find(editor => editor.viewColumn === fileOrFolder.editorIndex);
+      editor = vscode?.window?.activeEditor || vscode.window.activeTextEditor;
+      if (editor) {
+         document = editor.document;
+         return document.uri;
+      }
+   }
+   if (editor &&
+      (typeof fileOrFolder === 'object' && !(fileOrFolder instanceof vscode.Uri))
+      (typeof fileOrFolder !== 'string' && !(fileOrFolder instanceof vscode.Uri))
+   ) {
+      document = editor.document;
+      return document?.uri;
+   }
    return (fileOrFolder == null && vscode?.window?.activeTextEditor) ?
       vscode.window.activeTextEditor.document.uri :
       (fileOrFolder == null && vscode?.window?.activeEditor?.document?.uri) ?
@@ -29,6 +46,15 @@ async function copyFileOrFolderUri(fileOrFolder, getUriFn = getFileOrFolderUri, 
       fileOrFolderUri = fileOrFolder.map(getUriFn).map(uri => uri ? uri.toString() : '');
    } else {
       const uri = getUriFn(fileOrFolder);
+      // if (uri && uri instanceof vscode.Uri && uri.scheme === 'sasServer') {
+      //    const binaryContentsBuffer = await vscode.workspace.fs.readFile(uri);
+      //    // print buffer length
+      //    console.log(`(copyFileOrFolderUri) Buffer length: ${binaryContentsBuffer.length}`);
+      //    // convert buffer to string
+      //    const binaryContentsText = new TextDecoder("utf-8").decode(binaryContentsBuffer);
+      //    // print string
+      //    console.log(`(copyFileOrFolderUri) Text: ${binaryContentsText}`);
+      // }
       fileOrFolderUri = uri ? [uri.toString()] : [''];
    }
    await copyFn(fileOrFolderUri, 'File/Folder Uri');
