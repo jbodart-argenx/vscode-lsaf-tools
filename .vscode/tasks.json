@@ -5,11 +5,11 @@
          "label": "set-main-src and Watch",
          "dependsOn": ["set-main-src", "Watch Task"],
          "group": {
-           "kind": "build",
-           "isDefault": true
+            "kind": "build",
+            "isDefault": true
          }
-       },
-       {
+      },
+      {
          "label": "set-main-src",
          "type": "shell",
          "command": "node",
@@ -24,9 +24,9 @@
          "problemMatcher": []
       },
       {
-        "label": "Watch Task",
-        "type": "shell",
-        "command": "npm run watch"
+         "label": "Watch Task",
+         "type": "shell",
+         "command": "npm run watch"
       }
    ]
 }

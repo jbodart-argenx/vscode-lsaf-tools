@@ -46,11 +46,11 @@
 			"request": "launch",
 			"program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
 			"args": [
-			  "--runInBand",
-			  "--watchAll=false"
+				"--runInBand",
+				"--watchAll=false"
 			],
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen"
-		  }
+		}
 	]
 }
