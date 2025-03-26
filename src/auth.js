@@ -92,7 +92,7 @@ async function askForCredentials(key) {
       }
 
       const password = await vscode.window.showInputBox({
-         prompt: "Password ?",
+         prompt: "Password for user: " + username + " on: " + key + " ?",
          password: true,
          ignoreFocusOut: true,
       });
@@ -114,6 +114,49 @@ async function storeCredentials(key, username, password) {
    await credStore.SetCredential(key, username, password);
 }
 
+async function updateCredentials(key) {
+   if (key == null) {
+      key = await vscode.window.showInputBox({
+         title: "Update credentials for host name",
+         prompt: "Enter fully qualified host name (e.g. 'example.ondemand.sas.com')\n",
+         ignoreFocusOut: true,
+      });
+   }
+   if (!key) throw new Error('updateCredentials: no hostname provided, aborting.');
+   if ((await getCredentials(key))?._password) {
+      // credentials exist, delete them first
+      await deleteCredentials(key);
+   }
+   let newCredentials, username, password, authToken;
+   try {
+      ({ newCredentials, _username: username, _password: password } = await askForCredentials(key));
+      console.log('newCredentials:', newCredentials)
+      if (newCredentials) {
+         // Attempt logon to get authToken
+         authToken = logon(key, username, password, false);
+      }
+      if (!authToken) {
+         // incorrect password or encryption failed
+         console.error('updateCredentials: incorrect password, or failure to encrypt or to check encrypted password, aborting.');
+         vscode.window.showErrorMessage(`updateCredentials: incorrect password, or failure to encrypt or to check encrypted password, aborting.`);
+         return;
+      }
+      const credentials = await credStore.GetCredential(key);
+      if (credentials != null) {
+         console.log(`Host ${key} credentials successfully updated.`);
+         vscode.window.showInformationMessage(`Host "${key}" credentials were successfully updated.`);
+      } else {
+         console.error(`Host ${key} credentials were NOT saved!`);
+         vscode.window.showErrorMessage(`Failed to save Host ${key} credentials!`);
+      }
+   } catch (error) {
+      if (error) {
+         console.error(`Error updating Host "${key}" credentials: ${error.message}`);
+         vscode.window.showErrorMessage(`Error updating Host "${key}" credentials: ${error.message}`);
+      }
+   }
+}
+
 async function deleteCredentials(key) {
    if (key == null) {
       key = await vscode.window.showInputBox({
@@ -129,7 +172,7 @@ async function deleteCredentials(key) {
          console.log(`Host ${key} auth token deleted.`);
       }
       if (!(await getCredentials(key))?._password) {
-         vscode.window.showErrorMessage(`deleteCredentials: No credentials saved for Host "${key}", aborting.`);
+         vscode.window.showErrorMessage(`deleteCredentials: No stored credentials for Host "${key}", aborting.`);
          return;
       }
       await credStore.DeleteCredential(key);
@@ -339,6 +382,7 @@ module.exports = {
    askForCredentials,
    storeCredentials,
    deleteCredentials,
+   updateCredentials,
    logon,
    encryptPassword
 };

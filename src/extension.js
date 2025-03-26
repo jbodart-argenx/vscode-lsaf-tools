@@ -52,6 +52,14 @@ async function activate(context) {
 		}
 	);
 
+	const updateCredentialsCommand = vscode.commands.registerCommand(
+		"vscode-lsaf-tools.updateCredentials",
+		async (host) => {
+			const { updateCredentials } = await require('./auth.js');
+			return updateCredentials(host);
+		}
+	);
+
 	const getFileUriCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.copyFileUri",
 		async (fileOrFolder, fileOrFolders) => {
@@ -118,6 +126,7 @@ async function activate(context) {
 		helloWorldCommand,
 		getXAuthTokenCommand,
 		deleteCredentialsCommand,
+		updateCredentialsCommand,
 		getFileUriCommand,
 		getOppositeEndpointUriCommand,
 		getLsafFilePathCommand,
