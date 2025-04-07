@@ -1000,6 +1000,7 @@ suite('createFormDataFromWorkspace', () => {
    let mockFormData;
    let mockReadFile;
    let mockLogger;
+   let createFormDataFromWorkspace;
 
    suiteSetup(async () => {
       const chai = await import('chai');
