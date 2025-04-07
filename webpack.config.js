@@ -28,7 +28,7 @@ const commonConfig = {
    },
    plugins: [
       new webpack.DefinePlugin({
-         'self': JSON.stringify('typeof self !== "undefined" ? self : this')
+         'self': 'globalThis'
       }),
       // new BundleAnalyzerPlugin()  // after building, open a web page showing the dependency tree of the project
    ]

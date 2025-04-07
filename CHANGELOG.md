@@ -14,3 +14,8 @@ All notable changes to the "vscode-lsaf-tools" extension will be documented in t
 
 ## 0.0.4 - 2025-03-26
 - Add Update Credentials command
+
+## 0.0.5 - 2025-04-07
+- Fix issue with Self not being defined in dependencies, by using new webpack.DefinePlugin({ 'self': 'globalThis' }).
+- Fix bugs introduced in createFormDataFromFileSystem(), getFormData(), getOppositeEndpointUri() during refactoring.
+- Display copyToOppositeEndpoint() error messages in VScode UI, if any.

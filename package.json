@@ -2,7 +2,7 @@
   "name": "vscode-lsaf-tools",
   "displayName": "vscode-lsaf-tools",
   "description": "A collection of tools for working with LSAF files",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "jbodart-argenx",
   "license": "MIT",
   "engines": {
@@ -30,7 +30,7 @@
     "onCommand:vscode-lsaf-tools.getLocalFilePath",
     "onCommand:vscode-lsaf-tools.copyToOppositeEndpoint"
   ],
-  "main": "./dist/extension.js",
+  "main": "./src/extension.js",
   "browser": "./dist/web/extension.js",
   "capabilities": {
     "virtualWorkspaces": true
@@ -207,7 +207,7 @@
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "chai": "^5.2.0",
-    "eslint": "^9.23.0",
+    "eslint": "^9.24.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
     "proxyquire": "^2.1.3",
