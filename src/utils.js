@@ -111,7 +111,8 @@ async function getOppositeEndpointUri(fileOrFolder, getDefaultEndPointsFn = asyn
             const endpoint1 = endpoints[endpointIndex];
             if (endpoint1) {
             // const endpoint1RelPath = fileOrFolderUri.toString().replace(endpoint1.uri.toString(), '').replace(/^\//, '');
-               const endpoint1RelPath = pathFromUri(fileOrFolderUri).replace(pathFromUri(endpoint1.uri), '').replace(/^\//, '');
+               const endpoint1RelPath = pathFromUri(fileOrFolderUri).replace(pathFromUri(endpoint1.uri), '')
+                  .replace(/\\/g, "/").replace(/^\//, '');
 
                const otherEndpointUri = vscode.Uri.joinPath(otherEndpoint.uri, endpoint1RelPath);
                console.log(`(getOppositeEndpoint) Opposite endpoint for: ${fileOrFolderUri} is: ${otherEndpointUri}`);
@@ -265,16 +266,17 @@ async function getFormData(fileUri, fileContents) {
    }
 
    if (fileUri && fileUri instanceof vscode.Uri) {
-      const stream = await getFileReadStreamAndCreateFormData(formdata, fileUri, filename);
-      if (stream) {
-         return stream;
+      if (fileUri.scheme === 'file') {
+         const fsFormData = createFormDataFromFileSystem(formdata, fileUri, filename);
+         if (fsFormData) {
+            return fsFormData;
+         }
+      } else if (['lsaf-repo', 'lsaf-work'].includes(fileUri.scheme)) {
+         const stream = await getFileReadStreamAndCreateFormData(formdata, fileUri, filename);
+         if (stream) {
+            return stream;
+         }
       }
-
-      const fsFormData = createFormDataFromFileSystem(formdata, fileUri, filename);
-      if (fsFormData) {
-         return fsFormData;
-      }
-
       return createFormDataFromWorkspace(formdata, fileUri, filename);
    }
 
@@ -426,6 +428,7 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
       if (stat.type & vscode.FileType.Directory) {
          // Copy folder to local endpoint
          debugger;
+         console.warn(`Copying folders to local endpoint not yet implemented.`);
          vscode.window.showWarningMessage(`Copying folders to local endpoint not yet implemented.`);
       } else if (stat.type & vscode.FileType.File) {
          try {
