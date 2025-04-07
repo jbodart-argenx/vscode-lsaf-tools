@@ -35,14 +35,25 @@ describe('copyToClipboard', () => {
     const error = new Error('Clipboard failed');
     vscode.env.clipboard.writeText.mockRejectedValue(error);
 
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
     await copyToClipboard(text);
 
     expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(`Error copying Text to clipboard: ${error.message}`);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(`(Object.copyToClipboard) Error copying Text to clipboard: ${error.message}`);
+
+    consoleErrorSpy.mockRestore();
   });
 
   test('should show warning message when no text is specified', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
     await copyToClipboard(null);
+
     expect(vscode.window.showWarningMessage).toHaveBeenCalledWith('Failed to copy Text to clipboard: no Text specified.');
+    expect(consoleErrorSpy).toHaveBeenCalledWith('(Object.copyToClipboard) Failed to copy Text to clipboard: no Text specified.');
+
+    consoleErrorSpy.mockRestore();
   });
 
   test('should log the caller function name', async () => {
