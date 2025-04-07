@@ -337,7 +337,7 @@ function createFormDataFromFileSystem(formdata, fileUri, filename, fs = require(
    }
 
    try {
-      formdata.append('file', fs.createReadStream(fileUri.fsPath));
+      formdata.append('uploadFile', fs.createReadStream(fileUri.fsPath));
       return [formdata, filename];
    } catch (error) {
       logger.error(`(createFormDataFromFileSystem) Could not read file as a stream: ${error.message}`);
