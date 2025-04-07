@@ -730,7 +730,7 @@ suite('createFormDataFromContents', () => {
       expect(formdata).to.equal(mockFormData);
       expect(resultFilename).to.equal(filename);
       expect(mockFormData.append.calledOnce).to.be.true;
-      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');
+      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');      // 'uploadFile' is the required field name
       expect(mockFormData.append.firstCall.args[2]).to.deep.equal({ filename });
    });
 
@@ -763,7 +763,7 @@ suite('createFormDataFromContents', () => {
       expect(formdata).to.equal(mockFormData);
       expect(resultFilename).to.equal(filename);
       expect(mockFormData.append.calledOnce).to.be.true;
-      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');
+      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');   // 'uploadFile' is the required field name
       expect(mockFormData.append.firstCall.args[2]).to.deep.equal({ filename });
 
       const bufferStream = mockFormData.append.firstCall.args[1];
@@ -835,7 +835,7 @@ suite('getFileReadStreamAndCreateFormData', () => {
       expect(resultFormdata).to.equal(formdata);
       expect(resultFilename).to.equal(filename);
       expect(formdata.append.calledOnce).to.be.true;
-      expect(formdata.append.firstCall.args[0]).to.equal('uploadFile');
+      expect(formdata.append.firstCall.args[0]).to.equal('uploadFile');    // 'uploadFile' is the required field name
       expect(formdata.append.firstCall.args[1]).to.equal(mockStream);
       expect(formdata.append.firstCall.args[2]).to.deep.equal({ filename });
    });
@@ -939,7 +939,7 @@ suite('createFormDataFromFileSystem', () => {
       expect(formdata).to.equal(mockFormData);
       expect(resultFilename).to.equal(filename);
       expect(mockFormData.append.calledOnce).to.be.true;
-      expect(mockFormData.append.firstCall.args[0]).to.equal('file');
+      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');            // 'uploadFile' is the required form field name
       expect(mockFormData.append.firstCall.args[1]).to.equal(mockCreateReadStream());
    });
 
@@ -1036,7 +1036,7 @@ suite('createFormDataFromWorkspace', () => {
       expect(formdata).to.equal(mockFormData);
       expect(resultFilename).to.equal(filename);
       expect(mockFormData.append.calledOnce).to.be.true;
-      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');
+      expect(mockFormData.append.firstCall.args[0]).to.equal('uploadFile');   // 'uploadFile' is the required form field name
       expect(mockFormData.append.firstCall.args[1].equals(fileContents)).to.be.true;
       expect(mockFormData.append.firstCall.args[2]).to.equal(filename);
    });
