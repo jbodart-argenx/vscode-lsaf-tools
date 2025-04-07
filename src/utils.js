@@ -519,6 +519,7 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
             } catch (error) {
                if (error.code === 'ECONNABORTED') {
                   logger.error(`(uploadFile) Fetch request timed out after ${timeout / 1000} seconds.`);
+                  vscode.window.showErrorMessage(`(uploadFile) Fetch request timed out after ${timeout / 1000} seconds.`);
                   throw new Error(`(uploadFile) Fetch request timed out after ${timeout / 1000} seconds.`);
                } else {
                   debugger;
@@ -529,6 +530,12 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
                      error?.response?.data?.remediation || ''
                   );
                   if (error?.config?.headers) logger.log('request headers:', error.config.headers);
+                  vscode.window.showErrorMessage(
+                     `(uploadFile) Fetch request failed: ${
+                        error?.response?.status || ''} ${
+                           error?.response?.data?.message || ''} ${
+                              error?.response?.data?.remediation || ''}`
+                  );
                   throw new Error('(uploadFile) Fetch request failed:', error.message);
                }
             }
