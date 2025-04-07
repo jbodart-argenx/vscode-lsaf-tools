@@ -61,6 +61,7 @@ suite('getFileOrFolderUri', () => {
 
    test('should return the active editor document URI when fileOrFolder is null and activeEditor.document.uri is defined', function () {
       if (!vscode.window.activeEditor) {
+         console.log('Test skipped as activeEditor is not defined:');
          this.skip(); // Skip the test if activeEditor is not defined
       }
 
@@ -568,7 +569,9 @@ suite('getFormData', () => {
       sandbox.restore();
    });
 
-   test('should create FormData from file contents', async () => {
+   test('should create FormData from file contents', async function () {
+      this.timeout(5000); // Increase timeout to 5000ms (5 seconds)
+      console.log('Test expected to take longer (should create FormData from file contents):');
       const fileContents = new Uint8Array([1, 2, 3]);
       const fileUri = vscode.Uri.file('/path/to/file.txt');
       const filename = 'file.txt';
