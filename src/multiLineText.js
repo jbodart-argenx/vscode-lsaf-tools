@@ -1,9 +1,13 @@
 const vscode = require("vscode");
+// const { getWebviewContent } = require("./webviewUtils");
 
 // This is the async function that opens a webview and collects multi-line input from the user
 // Even though the function does not use await, marking a function as async ensures it returns a promise.
 // This can be useful if the function needs to be used in a context where a promise is expected.
-async function getMultiLineText(defaultValue = '', info, getWebviewContent = getWebviewContent) {
+async function getMultiLineText(defaultValue = '', info, getWebviewContent) {
+   if (!getWebviewContent) {
+      getWebviewContent = require("./webviewUtils").getWebviewContent;
+   }
    let title = "Multi-Line Input";
    if (info && typeof info === 'string') {
       title = info;
@@ -89,73 +93,8 @@ async function showMultiLineText(textValue = '', title = "Text Content", header 
    });
 }
 
-// Helper function to get the HTML content for the webview
-function getWebviewContent(defaultValue, title="File Upload Comment", header=undefined, buttonLabel="Submit", editable=true, preserveWhitespace = false) {
-   if (! header) header = `Enter ${title} below:`;
-   const escapedTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-   const escapedHeader = header.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-   const escapedValue = `${defaultValue || ''}`.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-   const escapedButtonLabel = buttonLabel.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-   const readonly = editable ? "" : "readonly";
-
-   return `
-   <!DOCTYPE html>
-   <html lang="en">
-      <head>
-         <meta charset="UTF-8">
-         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-         <title>${escapedTitle}</title>
-         <style>
-            body {
-               display: flex;
-               flex-direction: column;
-               margin: 0;
-               height: 100vh;
-               box-sizing: border-box;
-               font-family: ${preserveWhitespace ? 'monospace;' : 'sans-serif'};
-               ${preserveWhitespace && 'white-space: pre-wrap;'}
-            }
-            textarea {
-               flex: 1;
-               box-sizing: border-box;
-               font-family: ${preserveWhitespace ? 'monospace;' : 'sans-serif'};
-               ${preserveWhitespace && 'white-space: pre-wrap;'}
-            }
-            .controls {
-               margin-top: 10px;
-            }
-         </style>
-      </head>
-      <body>
-         <h2>${escapedHeader}</h2>
-         <textarea id="inputText" ${readonly}>${escapedValue}</textarea>
-         <div class="controls">
-            <button onclick="submitText()">${escapedButtonLabel}</button>
-         </div>
-
-         <script>
-            console.log("Webview loaded");
-
-            const vscode = acquireVsCodeApi();
-
-            function submitText() {
-               const text = document.getElementById('inputText').value;
-               console.log("Submitting text:", text);
-
-               vscode.postMessage({
-                     command: 'submitText',
-                     text: text
-               });
-            }
-         </script>
-      </body>
-   </html>
-`;
-}
-
 // Export the function so it can be imported in other files
 module.exports = {
    getMultiLineText,
-   showMultiLineText,
-   getWebviewContent
+   showMultiLineText
 };

@@ -1,6 +1,7 @@
 const sinon = require('sinon');
 const vscode = require('vscode');
-const { getWebviewContent, showMultiLineText, getMultiLineText } = require('../../src/multiLineText.js');
+const { showMultiLineText, getMultiLineText } = require('../../src/multiLineText.js');
+const { getWebviewContent } = require('../../src/webviewUtils.js');
 
 suite('getWebviewContent', () => {
    let expect;

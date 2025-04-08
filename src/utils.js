@@ -1,6 +1,8 @@
+// import { get } from 'axios';
+
 const vscode = require('vscode');
 
-const { getMultiLineText: getMultiLineInput } = require('./multiLineText.js');
+// const { getMultiLineText } = require('./multiLineText.js');
 const { uriFromString, pathFromUri } = require('./uri');
 const { getDefaultEndpoints } = require("./endpoints");
 
@@ -231,22 +233,27 @@ async function getLocalPath(fileOrFolder, getDefaultEndPointsFn = async () => ge
 }
 
 
-async function enterMultiLineComment(defaultValue, info, getInputFn = getMultiLineInput) {
+async function enterMultiLineComment(defaultValue, info, getInputFn) {
    // vscode.window.showInformationMessage(info || `Enter a (multi-line) comment and click 'submit' when done.`);
+   if (!getInputFn) {
+      getInputFn = async (defaultValue, info) => {
+         const { getMultiLineText } = require('./multiLineText.js');
+         return await getMultiLineText(defaultValue, info);
+      }
+   }
    let userInput;
    try {
       userInput = await getInputFn(defaultValue, info) || '';
    } catch (error) {
+      console.error(`(enterMultiLineComment): Error calling ${getInputFn.name}(): ${error.message}`);
       if (error) userInput = '';
    }
    let comment;
    if (userInput && typeof userInput === 'string' && userInput.trim()) {
       console.log(`Comment entered: ${userInput}`);
-      // vscode.window.showInformationMessage(`Comment entered: ${userInput}`);
       comment = userInput;
    } else {
       console.log('No comment provided.');
-      // vscode.window.showInformationMessage('No comment provided.');
       comment = '';
    }
    console.log('Entered comment:\n', comment);
