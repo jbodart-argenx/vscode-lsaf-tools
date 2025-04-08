@@ -122,6 +122,17 @@ async function activate(context) {
 		}
 	);
 
+	const compareToOppositeEndpointCommand = vscode.commands.registerCommand(
+		"vscode-lsaf-tools.compareToOppositeEndpoint",
+		async (fileOrFolder, fileOrFolders) => {
+			const { compareToOppositeEndpoint, getFileOrFolderUri, getOppositeEndpointUri } = await require('./utils.js');
+			console.log(`(compareToOppositeEndpoint) fileOrFolder:`, fileOrFolder, `, fileOrFolders:`, fileOrFolders);
+			let oppositeEndpoint;
+			return await compareToOppositeEndpoint(fileOrFolders || [fileOrFolder], oppositeEndpoint, getFileOrFolderUri,
+				getOppositeEndpointUri);
+		}
+	);
+
 	context.subscriptions.push(...[
 		helloWorldCommand,
 		getXAuthTokenCommand,
@@ -131,7 +142,8 @@ async function activate(context) {
 		getOppositeEndpointUriCommand,
 		getLsafFilePathCommand,
 		getLocalFilePathCommand,
-		copyToOppositeEndpointCommand
+		copyToOppositeEndpointCommand,
+		compareToOppositeEndpointCommand
 	]);
 
 	const commands = (await vscode.commands.getCommands()).filter(c => /lsaf/i.test(c));

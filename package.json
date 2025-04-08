@@ -28,7 +28,8 @@
     "onCommand:vscode-lsaf-tools.getOppositeEndpointUri",
     "onCommand:vscode-lsaf-tools.getLsafFilePath",
     "onCommand:vscode-lsaf-tools.getLocalFilePath",
-    "onCommand:vscode-lsaf-tools.copyToOppositeEndpoint"
+    "onCommand:vscode-lsaf-tools.copyToOppositeEndpoint",
+    "onCommand:vscode-lsaf-tools.compareToOppositeEndpoint"
   ],
   "main": "./src/extension.js",
   "browser": "./dist/web/extension.js",
@@ -86,7 +87,7 @@
       },
       {
         "command": "vscode-lsaf-tools.copyFileUri",
-        "title": "LSAF: Copy File Uri",
+        "title": "LSAF: Copy Uri",
         "category": "LSAF"
       },
       {
@@ -100,6 +101,10 @@
       {
         "command": "vscode-lsaf-tools.getLocalFilePath",
         "title": "LSAF: Get Local Path"
+      },
+      {
+        "command": "vscode-lsaf-tools.compareToOppositeEndpoint",
+        "title": "LSAF: Compare To Opposite Endpoint"
       },
       {
         "command": "vscode-lsaf-tools.copyToOppositeEndpoint",
@@ -129,6 +134,10 @@
           "group": "LSAF"
         },
         {
+          "command": "vscode-lsaf-tools.compareToOppositeEndpoint",
+          "group": "LSAF"
+        },
+        {
           "command": "vscode-lsaf-tools.copyToOppositeEndpoint",
           "group": "LSAF"
         }
@@ -151,6 +160,10 @@
           "group": "LSAF"
         },
         {
+          "command": "vscode-lsaf-tools.compareToOppositeEndpoint",
+          "group": "LSAF"
+        },
+        {
           "command": "vscode-lsaf-tools.copyToOppositeEndpoint",
           "group": "LSAF"
         }
@@ -170,6 +183,10 @@
         },
         {
           "command": "vscode-lsaf-tools.getLocalFilePath",
+          "group": "LSAF"
+        },
+        {
+          "command": "vscode-lsaf-tools.compareToOppositeEndpoint",
           "group": "LSAF"
         },
         {
