@@ -5,8 +5,7 @@ const webpack = require('webpack');
 const commonConfig = {
    mode: 'production', // 'production' or 'development'
    entry: {
-      extension: './src/extension.js',
-      'web/extension': './src/web/extension.js'
+      extension: './src/extension.js'
    },
    output: {
       path: path.resolve(__dirname, 'dist'),
@@ -17,10 +16,10 @@ const commonConfig = {
    resolve: {
       extensions: ['.js'],
       fallback: {
-         "path": require.resolve("path-browserify"),
-         "os": require.resolve("os-browserify/browser"),
-         "util": require.resolve("util"), // Use the 'util' module from npm as a fallback of the Node.js module
-         "stream": require.resolve("stream-browserify"), // Use the 'stream' module from npm as a fallback of the Node.js module
+         // "path": require.resolve("path-browserify"),
+         // "os": require.resolve("os-browserify/browser"),
+         // "util": require.resolve("util"), // Use the 'util' module from npm as a fallback of the Node.js module
+         // "stream": require.resolve("stream-browserify"), // Use the 'stream' module from npm as a fallback of the Node.js module
       }
    },
    externals: {
@@ -39,15 +38,4 @@ const nodeConfig = {
    target: 'node', // Use 'node' for Node.js environment (code-server)
 };
 
-const webConfig = {
-   ...commonConfig,
-   target: 'webworker', // Use 'webworker' for web extensions
-   plugins: [
-      ...commonConfig.plugins,
-      new webpack.IgnorePlugin({
-         resourceRegExp: /^fs$/,
-      }),
-   ],
-};
-
-module.exports = [nodeConfig, webConfig];
+module.exports = nodeConfig;

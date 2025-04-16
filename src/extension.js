@@ -12,22 +12,6 @@ console.log('Default Endpoints:', defaultEndpoints);
 async function activate(context) {
 	console.log('Extension "vscode-lsaf-tools" activating...');
 
-	if (vscode.env.appHost === "desktop") {
-		const os = require('os'); // Load only in desktop environment
-		console.log("Running on platform:", os.platform());
-	} else {
-		console.log("Running in a web browser, using 'os-browserify/browser' instead of 'os' module.");
-		const os = require('os-browserify/browser');
-		console.log("Running on platform:", os.platform());
-		// globalThis provides a standardized way to access the global object, whether in a browser, Node.js, Web Workers, or other JavaScript environments.
-		const userAgent = globalThis.navigator?.userAgent || "Node.js";
-		const platform = userAgent.includes("Windows") ? "Windows" : 
-			userAgent.includes("Mac") ? "Mac" : 
-			userAgent.includes("Linux") ? "Linux" : 
-			"Unknown";
-		console.log("Running on platform:", platform);
-	}
-
 	const secretStorage = context.secrets;
 	const { initializeSecretModule } = await require('./auth.js');
 	initializeSecretModule(secretStorage);

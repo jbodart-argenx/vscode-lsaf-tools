@@ -1,9 +1,6 @@
-const pathBrowserify = require('path-browserify');
 const vscode = require('vscode');
 
-const path = typeof process !== 'undefined' && process.versions && process.versions.node
-   ? require('path') // Use native path module in Node.js environment
-   : pathBrowserify; // Use path-browserify in browser environment
+const path = require('path') // Use native path module in Node.js environment
 
 function getKnownSchemes() {
    const knownSchemes = ['http', 'https', 'ftp', 'file', 'untitled', 'vscode', 'vscode-remote', 'vscode-userdata', 'data', 'lsaf-repo', 'lsaf-work'];

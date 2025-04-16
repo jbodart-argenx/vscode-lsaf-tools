@@ -19,3 +19,7 @@ All notable changes to the "vscode-lsaf-tools" extension will be documented in t
 - Fix issue with Self not being defined in dependencies, by using new webpack.DefinePlugin({ 'self': 'globalThis' }).
 - Fix bugs introduced in createFormDataFromFileSystem(), getFormData(), getOppositeEndpointUri() during refactoring.
 - Display copyToOppositeEndpoint() error messages in VScode UI, if any.
+
+## 0.0.6 - 2024-04-16
+- Add "LSAF: Compare To Opposite Endpoint" command
+- Remove browser support (prevent ReferenceError: self is not defined)
