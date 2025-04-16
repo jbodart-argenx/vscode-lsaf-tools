@@ -1,12 +1,11 @@
 const vscode = require("vscode");
-// const { getWebviewContent } = require("./webviewUtils");
 
 // This is the async function that opens a webview and collects multi-line input from the user
 // Even though the function does not use await, marking a function as async ensures it returns a promise.
 // This can be useful if the function needs to be used in a context where a promise is expected.
 async function getMultiLineText(defaultValue = '', info, getWebviewContent) {
    if (!getWebviewContent) {
-      getWebviewContent = require("./webviewUtils").getWebviewContent;
+      getWebviewContent = require("./getMultiLineTextWebviewUtils").getWebviewContent;
    }
    let title = "Multi-Line Input";
    if (info && typeof info === 'string') {
