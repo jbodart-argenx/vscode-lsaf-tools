@@ -24,7 +24,7 @@ function getFileFolderOrDocumentUri(fileOrFolder) {
       }
    }
    if (editor &&
-      (typeof fileOrFolder === 'object' && !(fileOrFolder instanceof vscode.Uri))
+      (typeof fileOrFolder === 'object' && !(fileOrFolder instanceof vscode.Uri)) &&
       (typeof fileOrFolder !== 'string' && !(fileOrFolder instanceof vscode.Uri))
    ) {
       document = editor.document;
