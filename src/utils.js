@@ -1,8 +1,10 @@
-// import { get } from 'axios';
-
 const vscode = require('vscode');
+const os = require('os');
 
-// const { getMultiLineText } = require('./multiLineText.js');
+const { exec } = require('child_process');
+
+const { compareFolderContents, compareFileContents } = require('./compareContents');
+
 const { uriFromString, pathFromUri } = require('./uri');
 const { getDefaultEndpoints } = require("./endpoints");
 
@@ -33,8 +35,8 @@ function getFileFolderOrDocumentUri(fileOrFolder) {
    return (fileOrFolder == null && vscode?.window?.activeTextEditor) ?
       vscode.window.activeTextEditor.document.uri :
       (fileOrFolder == null && vscode?.window?.activeEditor?.document?.uri) ?
-      vscode.window.activeEditor?.document?.uri :
-      uriFromString(fileOrFolder);
+         vscode.window.activeEditor?.document?.uri :
+         uriFromString(fileOrFolder);
 }
 
 
@@ -112,7 +114,7 @@ async function getOppositeEndpointUri(fileOrFolder, getDefaultEndPointsFn = asyn
             const endpointIndex = endpointIndexes[idx];
             const endpoint1 = endpoints[endpointIndex];
             if (endpoint1) {
-            // const endpoint1RelPath = fileOrFolderUri.toString().replace(endpoint1.uri.toString(), '').replace(/^\//, '');
+               // const endpoint1RelPath = fileOrFolderUri.toString().replace(endpoint1.uri.toString(), '').replace(/^\//, '');
                const endpoint1RelPath = pathFromUri(fileOrFolderUri).replace(pathFromUri(endpoint1.uri), '')
                   .replace(/\\/g, "/").replace(/^\//, '');
 
@@ -138,7 +140,7 @@ async function getOppositeEndpointUri(fileOrFolder, getDefaultEndPointsFn = asyn
 
 async function getLsafPath(fileOrFolder, getDefaultEndPointsFn = async () => getDefaultEndpoints()) {
    if (Array.isArray(fileOrFolder)) {
-      let results = await Promise.allSettled(fileOrFolder.map(fileOrFolder => getLsafPath(fileOrFolder, getDefaultEndPointsFn)));      
+      let results = await Promise.allSettled(fileOrFolder.map(fileOrFolder => getLsafPath(fileOrFolder, getDefaultEndPointsFn)));
       results = results.map((result) => (result.status === 'fulfilled') ? result.value : null);
       return results;
    }
@@ -205,8 +207,8 @@ async function getLocalPath(fileOrFolder, getDefaultEndPointsFn = async () => ge
          let localPaths = (Array.isArray(fileOrFolderUri) ? fileOrFolderUri : [fileOrFolderUri]).map(fileOrFolderUri => {
             // Find the endpoint that matches the fileOrFolderUri
             const endpoint = endpoints.find(ep => (fileOrFolderUri?.toString() || '').startsWith(ep.uri.toString()));
-            try {            
-               const localFileOrFolderUri = vscode.Uri.joinPath(localEndpoint.uri, 
+            try {
+               const localFileOrFolderUri = vscode.Uri.joinPath(localEndpoint.uri,
                   (fileOrFolderUri?.toString() || '').replace((endpoint?.uri?.toString() || '').replace(/\/$/, ''), ''));
                const localPath = decodeURIComponent(localFileOrFolderUri.fsPath);
                console.log(`(getLocalPath) Local path for ${fileOrFolderUri} is: ${localPath}`);
@@ -221,7 +223,7 @@ async function getLocalPath(fileOrFolder, getDefaultEndPointsFn = async () => ge
          vscode.window.showInformationMessage(`Local path(s) for:\n${fileOrFolderUri}\n is/are: ${localPaths.join(', \n')}`);
          return ((!Array.isArray(fileOrFolderUri) || fileOrFolderUri.length === 1) &&
             Array.isArray(localPaths) && localPaths.length === 1) ? localPaths[0] : localPaths;
-      } else {      
+      } else {
          vscode.window.showWarningMessage(`Failed to get Local path for ${fileOrFolder}: no local endpoint found.`);
          console.error(`(getLocalPath) Failed to get Local path for ${fileOrFolder}: no local endpoint found.`);
       }
@@ -368,32 +370,32 @@ async function createFormDataFromWorkspace(formdata, fileUri, filename, readFile
    }
 }
 
-async function compareToOppositeEndpoint( fileOrFolder, oppositeEndpoint, getFileOrFolderUri = getFileOrFolderUri,
-   getOppositeEndpointUri = getOppositeEndpointUri, logger = console) {
+async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context, getFileFolderOrDocumentUri = getFileFolderOrDocumentUri,
+   getOppositeEndpointUri = getOppositeEndpointUri, logger = console, textCompare = false) {
 
    // Ensure files or Folders and opposite endpoints are (arrays of) URIs
    if (!fileOrFolder) {
-   vscode.window.showInformationMessage(`(compareToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
+      vscode.window.showInformationMessage(`(compareToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
    const fileOrFolderUri = getFileFolderOrDocumentUri(fileOrFolder);
    if (!fileOrFolderUri) {
-   vscode.window.showWarningMessage(`Failed to compare ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
-   logger.error(`(compareToOppositeEndpoint) Failed to compare ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
-   return null;
+      vscode.window.showWarningMessage(`Failed to compare ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
+      logger.error(`(compareToOppositeEndpoint) Failed to compare ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
+      return null;
    }
    let oppositeEndpointUri;
    if (oppositeEndpoint) {
-   oppositeEndpointUri = uriFromString(oppositeEndpoint);
+      oppositeEndpointUri = uriFromString(oppositeEndpoint);
    } else {
-   oppositeEndpointUri = await getOppositeEndpointUri(fileOrFolder);
+      oppositeEndpointUri = await getOppositeEndpointUri(fileOrFolder);
    }
    if (Array.isArray(oppositeEndpointUri) && oppositeEndpointUri.length <= 1) {
-   oppositeEndpointUri = oppositeEndpointUri[0]; // Assuming we only need the first URI for single file/folder compare
+      oppositeEndpointUri = oppositeEndpointUri[0]; // Assuming we only need the first URI for single file/folder compare
    }
    if (!oppositeEndpointUri) {
-   vscode.window.showWarningMessage(`No opposite endpoint specified.`);
-   logger.error(`(compareToOppositeEndpoint) No opposite endpoint specified.`);
-   return null;
+      vscode.window.showWarningMessage(`No opposite endpoint specified.`);
+      logger.error(`(compareToOppositeEndpoint) No opposite endpoint specified.`);
+      return null;
    }
 
    // If arrays, check if they are the same length
@@ -402,9 +404,9 @@ async function compareToOppositeEndpoint( fileOrFolder, oppositeEndpoint, getFil
       if (!(Array.isArray(oppositeEndpointUri))) oppositeEndpointUri = [oppositeEndpointUri];
       if (fileOrFolderUri.length !== oppositeEndpointUri.length) {
          vscode.window.showWarningMessage(`Failed to compare ${fileOrFolder} to opposite endpoint: number of file or folder URIs (${fileOrFolderUri.length
-         }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
+            }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
          logger.error(`Failed to compare ${fileOrFolder} to opposite endpoint: number of file or folder URIs (${fileOrFolderUri.length
-         }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
+            }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
          return null;
       }
       return await Promise.allSettled(fileOrFolderUri.map((uri, idx) => compareToOppositeEndpoint(uri, oppositeEndpointUri[idx], context,
@@ -420,28 +422,31 @@ async function compareToOppositeEndpoint( fileOrFolder, oppositeEndpoint, getFil
 
    const stat = await vscode.workspace.fs.stat(fileOrFolderUri);
    if (stat.type & vscode.FileType.Directory) {
-      // Folder Comparison - not yet implemented
-      debugger;
-      console.warn(`Comparing folders to opposite endpoint not yet implemented.`);
-      vscode.window.showWarningMessage(`Comparing folders to opposite endpoint not yet implemented.`);
+      // Folder Comparison 
+      const miniContext = { extensionPath: context.extensionPath };
+      compareFolderContents(fileOrFolderUri, oppositeEndpointUri, miniContext, textCompare, logger);
    } else if (stat.type & vscode.FileType.File) {
-      try {
-         await vscode.commands.executeCommand(
-            "vscode.diff",
-            oppositeEndpointUri,  // left file, non-editable (original)
-            fileOrFolderUri,      // right file, editable (modified)
-            `${oppositeEndpointUri} ↔ ${fileOrFolderUri}`,  // Diff editor title
-            {  
-               preview: false,   // ensures the diff editor remains open until explicitly closed.
-               selection: null,  // No specific selection is highlighted in the diff editor.
-            }
-         );
-         vscode.window.showInformationMessage(`Compared ${fileOrFolderUri} to ${oppositeEndpointUri}`);
-         logger.log(`(compareToOppositeEndpoint) Compared ${fileOrFolderUri} to ${oppositeEndpointUri}`);
-      } catch (error) {
-         vscode.window.showErrorMessage(`Error comparing ${fileOrFolderUri} to ${oppositeEndpointUri}: ${error.message}`);
-         logger.error(`(compareToOppositeEndpoint) Error comparing ${fileOrFolderUri} to ${oppositeEndpointUri}: ${error.message}`);
-      }
+      compareFileContents(fileOrFolderUri, oppositeEndpointUri, logger);
+      // try {
+      //    const label = fileOrFolderUri.scheme === 'file' ? 'Local' : `${fileOrFolderUri.authority} ${fileOrFolderUri.scheme.replace('lsaf-', '')}`;
+      //    const oppositeLabel = oppositeEndpointUri.scheme === 'file' ? 'Local' : `${oppositeEndpointUri.authority} ${oppositeEndpointUri.scheme.replace('lsaf-', '')}`;
+      //    await vscode.commands.executeCommand(
+      //       "vscode.diff",
+      //       oppositeEndpointUri,  // left file, non-editable (original)
+      //       fileOrFolderUri,      // right file, editable (modified)
+      //       //`${oppositeEndpointUri} ↔ ${fileOrFolderUri}`,  // Diff editor title
+      //       `${fileOrFolderUri.path}`.split('/').pop() + ` (${oppositeLabel} ↔ ${label})`,  // Diff editor title
+      //       {  
+      //          preview: false,   // ensures the diff editor remains open until explicitly closed.
+      //          selection: null,  // No specific selection is highlighted in the diff editor.
+      //       }
+      //    );
+      //    vscode.window.showInformationMessage(`Compared ${fileOrFolderUri} to ${oppositeEndpointUri}`);
+      //    logger.log(`(compareToOppositeEndpoint) Compared ${fileOrFolderUri} to ${oppositeEndpointUri}`);
+      // } catch (error) {
+      //    vscode.window.showErrorMessage(`Error comparing ${fileOrFolderUri} to ${oppositeEndpointUri}: ${error.message}`);
+      //    logger.error(`(compareToOppositeEndpoint) Error comparing ${fileOrFolderUri} to ${oppositeEndpointUri}: ${error.message}`);
+      // }
    } else {
       vscode.window.showWarningMessage(`Failed to compare ${fileOrFolderUri} to ${oppositeEndpointUri}: not a file or folder.`);
       logger.error(`(compareToOppositeEndpoint) Failed to compare ${fileOrFolderUri} to ${oppositeEndpointUri}: not a file or folder.`);
@@ -451,8 +456,8 @@ async function compareToOppositeEndpoint( fileOrFolder, oppositeEndpoint, getFil
 }
 
 
-async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComment, getFileOrFolderUri = getFileOrFolderUri,
-                                       getOppositeEndpointUri = getOppositeEndpointUri, fs = vscode.workspace.fs, logger = console) {
+async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyComment, getFileFolderOrDocumentUri = getFileFolderOrDocumentUri,
+   getOppositeEndpointUri = getOppositeEndpointUri, fs = vscode.workspace.fs, logger = console) {
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(copyToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
@@ -476,11 +481,11 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
       logger.error(`(copyToOppositeEndpoint) No opposite endpoint specified.`);
       return null;
    }
-   
+
    let comment;
    if (copyComment === undefined) {
-      const isOppositeEndpointUriSchemeFile = (Array.isArray(oppositeEndpointUri)) ? 
-         oppositeEndpointUri.every(uri => uriFromString(uri).scheme === 'file') : 
+      const isOppositeEndpointUriSchemeFile = (Array.isArray(oppositeEndpointUri)) ?
+         oppositeEndpointUri.every(uri => uriFromString(uri).scheme === 'file') :
          uriFromString(oppositeEndpointUri).scheme === 'file';
       if (!isOppositeEndpointUriSchemeFile) {
          if (Array.isArray(fileOrFolderUri)) {
@@ -500,9 +505,9 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
       if (!(Array.isArray(oppositeEndpointUri))) oppositeEndpointUri = [oppositeEndpointUri];
       if (fileOrFolderUri.length !== oppositeEndpointUri.length) {
          vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: number of file or folder URIs (${fileOrFolderUri.length
-         }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
+            }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
          logger.error(`Failed to copy ${fileOrFolder} to opposite endpoint: number of file or folder URIs (${fileOrFolderUri.length
-         }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
+            }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
          return null;
       }
       return await Promise.allSettled(fileOrFolderUri.map((uri, idx) => copyToOppositeEndpoint(uri, oppositeEndpointUri[idx], comment,
@@ -670,16 +675,63 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
             }
          }
          logger.log(message);
-         
+
       } else {
          vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: no matching endpoint found.`);
          logger.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: no matching endpoint found.`);
       }
    }
-} 
+}
 
-module.exports = { getFileOrFolderUri, getLsafPath, getLocalPath, copyFileOrFolderUri,
+
+function openFileWithDefaultApp(filePath) {
+   if (filePath instanceof vscode.Uri) {
+      filePath = pathFromUri(filePath);
+      // filePath = decodeURIComponent(filePath.fsPath);
+   } else if (typeof filePath === 'string' && /file:\/\/\//.test(filePath)) {
+      filePath = pathFromUri(uriFromString(filePath));
+      if (filePath !== decodeURIComponent(filePath)) {
+         debugger;;;
+         console.warn(`Check what path is correct: ${filePath} or ${decodeURIComponent(filePath)}`);
+      }
+      filePath = decodeURIComponent(filePath);
+   }
+   console.log('filePath:', filePath);
+   if (os.platform() === 'win32' && !vscode.env.remoteName) {
+      exec(`start "" "${filePath}"`, (error) => {
+         if (error) {
+            console.error('Error opening file in Default App:', error);
+            vscode.window.showErrorMessage(`Error opening file in Default App: ${error.message}`);
+         } else {
+            console.log(`File was opened in Default App: ${filePath}`);
+            vscode.window.showInformationMessage(`File was opened in Default App: ${filePath}`);
+         }
+      });
+   } else {
+      vscode.commands.executeCommand('vscode.open', uriFromString(filePath));
+   }
+}
+
+
+function openFile(uri) {
+   if (uri && uri.scheme) {
+      openFileWithDefaultApp(uri.toString());
+      return;
+   }
+
+   const editor = vscode.window.activeTextEditor;
+   if (editor && editor.document.uri) {
+      openFileWithDefaultApp(editor.document.uri.toString());
+      return;
+   }
+
+   vscode.window.showInformationMessage('No editor is active. Select an editor or a file in the Explorer view.');
+}
+
+module.exports = {
+   getFileFolderOrDocumentUri: getFileFolderOrDocumentUri, getLsafPath, getLocalPath, copyFileOrFolderUri,
    getOppositeEndpointUri, copyToOppositeEndpoint, copyToClipboard, enterMultiLineComment,
    getFormData, getFilenameFromUri, createFormDataFromContents, getFileReadStreamAndCreateFormData,
-   createFormDataFromFileSystem, createFormDataFromWorkspace, compareToOppositeEndpoint
+   createFormDataFromFileSystem, createFormDataFromWorkspace, compareToOppositeEndpoint,
+   openFile, openFileWithDefaultApp
 };
