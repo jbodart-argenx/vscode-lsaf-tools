@@ -6,9 +6,9 @@ const vscode = require('vscode');
 const { uriFromString, pathFromUri } = require('./uri');
 const { getDefaultEndpoints } = require("./endpoints");
 
-function getFileOrFolderUri(fileOrFolder) {
+function getFileFolderOrDocumentUri(fileOrFolder) {
    if (Array.isArray(fileOrFolder)) {
-      return fileOrFolder.map(getFileOrFolderUri);
+      return fileOrFolder.map(getFileFolderOrDocumentUri);
    }
    if (fileOrFolder === '') {
       return null;
@@ -39,7 +39,7 @@ function getFileOrFolderUri(fileOrFolder) {
 
 
 
-async function copyFileOrFolderUri(fileOrFolder, getUriFn = getFileOrFolderUri, copyFn = copyToClipboard) {
+async function copyFileOrFolderUri(fileOrFolder, getUriFn = getFileFolderOrDocumentUri, copyFn = copyToClipboard) {
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(copyFileOrFolderUri) no file or folder specified, attempting to use Active Editor document.`);
    }
@@ -85,8 +85,8 @@ async function getOppositeEndpointUri(fileOrFolder, getDefaultEndPointsFn = asyn
       vscode.window.showInformationMessage(`(getOppositeEndpointUri) no file or folder specified, attempting to use Active Editor document.`);
    }
    const fileOrFolders = (Array.isArray(fileOrFolder)) ? fileOrFolder : [fileOrFolder];
-   const fileOrFolderUris = fileOrFolders.map(getFileOrFolderUri).map(uri => uri ? uri : '');
-   if (! fileOrFolderUris || !(Array.isArray(fileOrFolderUris)) || fileOrFolderUris.length === 0) {
+   const fileOrFolderUris = fileOrFolders.map(getFileFolderOrDocumentUri).map(uri => uri ? uri : '');
+   if (!fileOrFolderUris || !(Array.isArray(fileOrFolderUris)) || fileOrFolderUris.length === 0) {
       vscode.window.showWarningMessage(`Failed to get opposite endpoint for ${fileOrFolders}: could not retrieve file or folder URI.`);
       console.error(`(getOppositeEndpointUri) Failed to get opposite endpoint for ${fileOrFolders}: could not retrieve file or folder URI.`);
       return null;
@@ -145,8 +145,8 @@ async function getLsafPath(fileOrFolder, getDefaultEndPointsFn = async () => get
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(getLsafPath) no file or folder specified, attempting to use Active Editor document.`);
    }
-   const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
-   if (! fileOrFolderUri) {
+   const fileOrFolderUri = getFileFolderOrDocumentUri(fileOrFolder);
+   if (!fileOrFolderUri) {
       vscode.window.showWarningMessage(`Failed to get LSAF path for ${fileOrFolder}: could not retrieve file or folder URI.`);
       console.error(`(getLsafPath) Failed to get LSAF path for ${fileOrFolder}: could not retrieve file or folder URI.`);
       return null;
@@ -177,8 +177,8 @@ async function getLocalPath(fileOrFolder, getDefaultEndPointsFn = async () => ge
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(getLocalPath) no file or folder specified, attempting to use Active Editor document.`);
    }
-   const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
-   if (! fileOrFolderUri) {
+   const fileOrFolderUri = getFileFolderOrDocumentUri(fileOrFolder);
+   if (!fileOrFolderUri) {
       vscode.window.showWarningMessage(`Failed to get local path for ${fileOrFolder}: could not retrieve file or folder URI.`);
       console.error(`(getLocalPath) Failed to get local path for ${fileOrFolder}: could not retrieve file or folder URI.`);
       return null;
@@ -374,7 +374,7 @@ async function compareToOppositeEndpoint( fileOrFolder, oppositeEndpoint, getFil
    if (!fileOrFolder) {
    vscode.window.showInformationMessage(`(compareToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
-   const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
+   const fileOrFolderUri = getFileFolderOrDocumentUri(fileOrFolder);
    if (!fileOrFolderUri) {
    vscode.window.showWarningMessage(`Failed to compare ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
    logger.error(`(compareToOppositeEndpoint) Failed to compare ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
@@ -406,8 +406,8 @@ async function compareToOppositeEndpoint( fileOrFolder, oppositeEndpoint, getFil
          }) does not match number of opposite endpoints (${oppositeEndpointUri.length}).`);
          return null;
       }
-      return await Promise.allSettled(fileOrFolderUri.map((uri, idx) => compareToOppositeEndpoint(uri, oppositeEndpointUri[idx],
-         getFileOrFolderUri, getOppositeEndpointUri, logger)));
+      return await Promise.allSettled(fileOrFolderUri.map((uri, idx) => compareToOppositeEndpoint(uri, oppositeEndpointUri[idx], context,
+         getFileFolderOrDocumentUri, getOppositeEndpointUri, logger)));
    }
    if (!oppositeEndpointUri) {
       vscode.window.showWarningMessage(`Failed to compare ${fileOrFolder} to opposite endpoint: could not identify opposite endpoint.`);
@@ -455,7 +455,7 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(copyToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
-   const fileOrFolderUri = getFileOrFolderUri(fileOrFolder);
+   const fileOrFolderUri = getFileFolderOrDocumentUri(fileOrFolder);
    if (!fileOrFolderUri) {
       vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
       logger.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
@@ -505,7 +505,7 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
          return null;
       }
       return await Promise.allSettled(fileOrFolderUri.map((uri, idx) => copyToOppositeEndpoint(uri, oppositeEndpointUri[idx], comment,
-         getFileOrFolderUri, getOppositeEndpointUri, fs, logger)));
+         getFileFolderOrDocumentUri, getOppositeEndpointUri, fs, logger)));
    }
    if (!oppositeEndpointUri) {
       vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not identify opposite endpoint.`);
