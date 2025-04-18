@@ -98,10 +98,10 @@ async function activate(context) {
 	const copyToOppositeEndpointCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.copyToOppositeEndpoint",
 		async (fileOrFolder, fileOrFolders) => {
-			const { copyToOppositeEndpoint, getFileOrFolderUri, getOppositeEndpointUri } = await require('./utils.js');
+			const { copyToOppositeEndpoint, getFileFolderOrDocumentUri, getOppositeEndpointUri } = await require('./utils.js');
 			console.log(`(copyToOppositeEndpoint) fileOrFolder:`, fileOrFolder, `, fileOrFolders:`, fileOrFolders);
 			let oppositeEndpoint, copyComment;
-			return await copyToOppositeEndpoint(fileOrFolders || [fileOrFolder], oppositeEndpoint, copyComment, getFileOrFolderUri,
+			return await copyToOppositeEndpoint(fileOrFolders || [fileOrFolder], oppositeEndpoint, copyComment, getFileFolderOrDocumentUri,
 				getOppositeEndpointUri);
 		}
 	);
@@ -109,10 +109,10 @@ async function activate(context) {
 	const compareToOppositeEndpointCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.compareToOppositeEndpoint",
 		async (fileOrFolder, fileOrFolders) => {
-			const { compareToOppositeEndpoint, getFileOrFolderUri, getOppositeEndpointUri } = await require('./utils.js');
+			const { compareToOppositeEndpoint, getFileFolderOrDocumentUri, getOppositeEndpointUri } = await require('./utils.js');
 			console.log(`(compareToOppositeEndpoint) fileOrFolder:`, fileOrFolder, `, fileOrFolders:`, fileOrFolders);
 			let oppositeEndpoint;
-			return await compareToOppositeEndpoint(fileOrFolders || [fileOrFolder], oppositeEndpoint, getFileOrFolderUri,
+			return await compareToOppositeEndpoint(fileOrFolders || [fileOrFolder], oppositeEndpoint, context, getFileFolderOrDocumentUri,
 				getOppositeEndpointUri);
 		}
 	);
