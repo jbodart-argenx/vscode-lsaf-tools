@@ -98,7 +98,7 @@ async function getOppositeEndpointUri(fileOrFolder, getDefaultEndPointsFn = asyn
       let endpointIndexes = fileOrFolderUris.map(uri => endpoints.findIndex(ep => (uri.toString() || '').startsWith(ep.uri.toString())));
       // Unique endpointIndexes
       const uniqueEndpointIndexes = [...new Set(endpointIndexes.filter(idx => idx >= 0))];
-      const otherEndpoints = endpoints.filter((ep, idx) => ! (uniqueEndpointIndexes.includes(idx)) );
+      const otherEndpoints = endpoints.filter((ep, idx) => !(uniqueEndpointIndexes.includes(idx)));
       let selectedOtherEndpointLabel;
       if (otherEndpoints.length > 0) {
          selectedOtherEndpointLabel = await vscode.window.showQuickPick(otherEndpoints.map(ep => ep.label), {
@@ -219,7 +219,7 @@ async function getLocalPath(fileOrFolder, getDefaultEndPointsFn = async () => ge
             }
          });
          vscode.window.showInformationMessage(`Local path(s) for:\n${fileOrFolderUri}\n is/are: ${localPaths.join(', \n')}`);
-         return ((! Array.isArray(fileOrFolderUri) || fileOrFolderUri.length === 1) &&
+         return ((!Array.isArray(fileOrFolderUri) || fileOrFolderUri.length === 1) &&
             Array.isArray(localPaths) && localPaths.length === 1) ? localPaths[0] : localPaths;
       } else {      
          vscode.window.showWarningMessage(`Failed to get Local path for ${fileOrFolder}: no local endpoint found.`);
@@ -283,8 +283,9 @@ async function getFormData(fileUri, fileContents) {
          if (stream) {
             return stream;
          }
+      } else {
+         return createFormDataFromWorkspace(formdata, fileUri, filename);
       }
-      return createFormDataFromWorkspace(formdata, fileUri, filename);
    }
 
    throw new Error(`(getFormData) Invalid fileUri: ${fileUri}`);
@@ -480,7 +481,7 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
    if (copyComment === undefined) {
       const isOppositeEndpointUriSchemeFile = (Array.isArray(oppositeEndpointUri)) ? 
          oppositeEndpointUri.every(uri => uriFromString(uri).scheme === 'file') : 
-         uriFromString(oppositeEndpointUri).scheme  === 'file';
+         uriFromString(oppositeEndpointUri).scheme === 'file';
       if (!isOppositeEndpointUriSchemeFile) {
          if (Array.isArray(fileOrFolderUri)) {
             let results = await Promise.allSettled(fileOrFolderUri.map(async uri => await getLsafPath(uri)));
@@ -514,13 +515,15 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
    }
    logger.log(`(copyToOppositeEndpoint) Copying ${fileOrFolderUri} to ${oppositeEndpointUri}`);
    if (oppositeEndpointUri.scheme === 'file') {
+      // Copy to local endpoint
       const stat = await fs.stat(fileOrFolderUri);
       if (stat.type & vscode.FileType.Directory) {
-         // Copy folder to local endpoint
+         // Copy folder to local endpoint - NOT IMPLELMENTED YET
          debugger;
          console.warn(`Copying folders to local endpoint not yet implemented.`);
          vscode.window.showWarningMessage(`Copying folders to local endpoint not yet implemented.`);
       } else if (stat.type & vscode.FileType.File) {
+         // Copy file to local endpoint
          try {
             await fs.copy(fileOrFolderUri, oppositeEndpointUri, { overwrite: true });
             vscode.window.showInformationMessage(`Copied ${fileOrFolderUri} to ${oppositeEndpointUri}`);
@@ -534,7 +537,7 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
          logger.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolderUri} to ${oppositeEndpointUri}: not a file or folder.`);
       }
    } else {
-      // Upload to remote endpoint
+      // Copy (Upload) to remote endpoint
       const { logon } = await require('./auth.js');
       let host = oppositeEndpointUri.authority;
       if (host && ['lsaf-repo', 'lsaf-work'].includes(oppositeEndpointUri.scheme)) {
@@ -639,7 +642,7 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
          let status;
          let message;
          const contentType = response.headers['content-type'];
-         logger.log('(RestApi.uploadFileContents) contentType:', contentType);
+         logger.log('(uploadFile) contentType:', contentType);
          if (response.headers['content-type'].match(/\bjson\b/)) {
             const data = response.data;
             status = data.status;
@@ -650,7 +653,7 @@ async function copyToOppositeEndpoint( fileOrFolder, oppositeEndpoint, copyComme
          } else {
             result = response.data;
          }
-         logger.log('(RestApi.uploadFileContents) result:', result);
+         logger.log('(uploadFile) result:', result);
          if (status?.type === 'FAILURE') {
             message = `File "${filename}" upload to "${path.posix.join(urlPath, filePath)}" on ${new URL(fullUrl).hostname} failed: ` + status?.message || result;
             vscode.window.showWarningMessage(message);
