@@ -207,6 +207,9 @@
     "test": "npm run test:jest && npm run test:vscode",
     "test-vscode-dummy-console": "vscode-test --extensionDevelopmentPath=. --extensionTestsPath=./out/test/dummyConsole.test.js",
     "test:vscode": "vscode-test",
+    "test:with-lsaf": "node ./test/run-with-lsaf.js",
+    "test:setup-lsaf": "node ./test/run-with-installed-extension.js",
+    "test:workspace-verify": "vscode-test --extensionDevelopmentPath=. --extensionTestsPath=./test/workspace-verify-runner --folder-uri=file:///${PWD}",
     "test:jest": "jest",
     "start": "code --extensionDevelopmentPath=.",
     "update": "npx npm-check-updates -u",
@@ -233,10 +236,14 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "archiver": "^7.0.1",
     "axios": "^1.8.4",
     "axios-cookiejar-support": "^5.0.5",
     "form-data": "^4.0.2",
+    "isbinaryfile": "^5.0.4",
     "js-beautify": "^1.15.4",
+    "strip-bom-buf": "^4.0.0",
+    "unzipper": "^0.12.3",
     "util": "^0.12.5"
   }
 }
