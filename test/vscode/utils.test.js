@@ -3,16 +3,16 @@ const vscode = require('vscode');
 const { getOppositeEndpointUri } = require('../../src/utils.js');
 const { createFormDataFromFileSystem } = require('../../src/utils.js');
 
-suite('getFileOrFolderUri', () => {
+suite('getFileFolderOrDocumentUri', () => {
    let expect;
-   let getFileOrFolderUri;
+   let getFileFolderOrDocumentUri;
    let sandbox;
 
    suiteSetup(async () => {
       // Dynamically import chai and the function to be tested
       const chai = await import('chai');
       expect = chai.expect;
-      ({ getFileOrFolderUri } = await import('../../src/utils.js'));
+      ({ getFileFolderOrDocumentUri } = await import('../../src/utils.js'));
    });
 
    setup(() => {
@@ -25,7 +25,7 @@ suite('getFileOrFolderUri', () => {
 
    test('should return an array of URIs when fileOrFolder is an array of strings', () => {
       const uris = ['file:///path/to/file1', 'file:///path/to/file2'];
-      const result = getFileOrFolderUri(uris);
+      const result = getFileFolderOrDocumentUri(uris);
       expect(result).to.be.an('array');
       expect(result).to.have.lengthOf(2);
       result.forEach(uri => {
@@ -35,7 +35,7 @@ suite('getFileOrFolderUri', () => {
 
    test('should return an array of URIs when fileOrFolder is an array of vscode.Uri', () => {
       const uris = [vscode.Uri.file('/path/to/file1'), vscode.Uri.file('/path/to/file2')];
-      const result = getFileOrFolderUri(uris);
+      const result = getFileFolderOrDocumentUri(uris);
       expect(result).to.be.an('array');
       expect(result).to.have.lengthOf(2);
       result.forEach(uri => {
@@ -45,7 +45,7 @@ suite('getFileOrFolderUri', () => {
 
    test('should return a single URI when fileOrFolder is a single vscode.Uri', () => {
       const uri = vscode.Uri.file('/path/to/file');
-      const result = getFileOrFolderUri(uri);
+      const result = getFileFolderOrDocumentUri(uri);
       expect(result).to.be.an.instanceof(vscode.Uri);
       expect(result.toString()).to.equal(uri.toString());
    });
@@ -54,7 +54,7 @@ suite('getFileOrFolderUri', () => {
       const mockUri = vscode.Uri.file('/path/to/active/file');
       sandbox.stub(vscode.window, 'activeTextEditor').value({ document: { uri: mockUri } });
 
-      const result = getFileOrFolderUri(null);
+      const result = getFileFolderOrDocumentUri(null);
       expect(result).to.equal(mockUri);
       expect(result).to.be.an.instanceof(vscode.Uri);
    });
@@ -68,31 +68,31 @@ suite('getFileOrFolderUri', () => {
       const mockUri = vscode.Uri.file('/path/to/active/file');
       sandbox.stub(vscode.window, 'activeEditor').value({ document: { uri: mockUri } });
 
-      const result = getFileOrFolderUri(null);
+      const result = getFileFolderOrDocumentUri(null);
       expect(result).to.equal(mockUri);
       expect(result).to.be.an.instanceof(vscode.Uri);
    });
 
    test('should return a URI when fileOrFolder is a string', () => {
       const uriString = 'file:///path/to/file';
-      const result = getFileOrFolderUri(uriString);
+      const result = getFileFolderOrDocumentUri(uriString);
       expect(result).to.be.an.instanceof(vscode.Uri);
       expect(result.toString()).to.equal(uriString);
    });
 
    test('should return null when fileOrFolder is undefined', () => {
-      const result = getFileOrFolderUri(undefined);
+      const result = getFileFolderOrDocumentUri(undefined);
       expect(result).to.be.null;
    });
 
    test('should return a file URI when fileOrFolder is an invalid string', () => {
-      const result = getFileOrFolderUri('invalid-uri');
+      const result = getFileFolderOrDocumentUri('invalid-uri');
       expect(result).to.be.an.instanceof(vscode.Uri);
       expect(result.scheme).to.equal('file');
    });
 
    test('should return null when fileOrFolder is an empty string', () => {
-      const result = getFileOrFolderUri('');
+      const result = getFileFolderOrDocumentUri('');
       expect(result).to.be.null;
    });
 });
@@ -105,7 +105,7 @@ suite('copyFileOrFolderUri', () => {
    let sandbox;
    let mockShowInformationMessage;
    let mockCopyToClipboard;
-   let mockGetFileOrFolderUri;
+   let mockgetFileFolderOrDocumentUri;
 
    suiteSetup(async () => {
       // Dynamically import chai and the function to be tested
@@ -118,7 +118,7 @@ suite('copyFileOrFolderUri', () => {
       sandbox = sinon.createSandbox();
       mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
       mockCopyToClipboard = sandbox.stub();
-      mockGetFileOrFolderUri = sandbox.stub();
+      mockgetFileFolderOrDocumentUri = sandbox.stub();
    });
 
    teardown(() => {
@@ -126,39 +126,39 @@ suite('copyFileOrFolderUri', () => {
    });
 
    test('should show information message when fileOrFolder is not provided', async () => {
-      await copyFileOrFolderUri(null, mockGetFileOrFolderUri, mockCopyToClipboard);
+      await copyFileOrFolderUri(null, mockgetFileFolderOrDocumentUri, mockCopyToClipboard);
       expect(mockShowInformationMessage.calledOnce).to.be.true;
       expect(mockShowInformationMessage.firstCall.args[0]).to.include('no file or folder specified');
    });
 
    test('should call copyToClipboard with URIs when fileOrFolder is an array of strings', async () => {
       const uris = ['file:///path/to/file1', 'file:///path/to/file2'];
-      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
-      await copyFileOrFolderUri(uris, mockGetFileOrFolderUri, mockCopyToClipboard);
+      mockgetFileFolderOrDocumentUri.callsFake(uri => vscode.Uri.parse(uri));
+      await copyFileOrFolderUri(uris, mockgetFileFolderOrDocumentUri, mockCopyToClipboard);
       expect(mockCopyToClipboard.calledOnce).to.be.true;
       expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal(uris);
    });
 
    test('should call copyToClipboard with URIs when fileOrFolder is a single string', async () => {
       const uri = 'file:///path/to/file';
-      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
-      await copyFileOrFolderUri(uri, mockGetFileOrFolderUri, mockCopyToClipboard);
+      mockgetFileFolderOrDocumentUri.callsFake(uri => vscode.Uri.parse(uri));
+      await copyFileOrFolderUri(uri, mockgetFileFolderOrDocumentUri, mockCopyToClipboard);
       expect(mockCopyToClipboard.calledOnce).to.be.true;
       expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal([uri]);
    });
 
    test('should call copyToClipboard with URIs when fileOrFolder is an array of vscode.Uri', async () => {
       const uris = [vscode.Uri.file('/path/to/file1'), vscode.Uri.file('/path/to/file2')];
-      mockGetFileOrFolderUri.callsFake(uri => uri);
-      await copyFileOrFolderUri(uris, mockGetFileOrFolderUri, mockCopyToClipboard);
+      mockgetFileFolderOrDocumentUri.callsFake(uri => uri);
+      await copyFileOrFolderUri(uris, mockgetFileFolderOrDocumentUri, mockCopyToClipboard);
       expect(mockCopyToClipboard.calledOnce).to.be.true;
       expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal(uris.map(uri => uri.toString()));
    });
 
    test('should call copyToClipboard with URIs when fileOrFolder is a single vscode.Uri', async () => {
       const uri = vscode.Uri.file('/path/to/file');
-      mockGetFileOrFolderUri.callsFake(uri => uri);
-      await copyFileOrFolderUri(uri, mockGetFileOrFolderUri, mockCopyToClipboard);
+      mockgetFileFolderOrDocumentUri.callsFake(uri => uri);
+      await copyFileOrFolderUri(uri, mockgetFileFolderOrDocumentUri, mockCopyToClipboard);
       expect(mockCopyToClipboard.calledOnce).to.be.true;
       expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal([uri.toString()]);
    });
@@ -166,8 +166,8 @@ suite('copyFileOrFolderUri', () => {
    test('should call copyToClipboard with active editor URI when fileOrFolder is not provided and activeTextEditor is defined', async () => {
       const mockUri = vscode.Uri.file('/path/to/active/file');
       sandbox.stub(vscode.window, 'activeTextEditor').value({ document: { uri: mockUri } });
-      mockGetFileOrFolderUri.callsFake(() => mockUri);
-      await copyFileOrFolderUri(null, mockGetFileOrFolderUri, mockCopyToClipboard);
+      mockgetFileFolderOrDocumentUri.callsFake(() => mockUri);
+      await copyFileOrFolderUri(null, mockgetFileFolderOrDocumentUri, mockCopyToClipboard);
       expect(mockCopyToClipboard.calledOnce).to.be.true;
       expect(mockCopyToClipboard.firstCall.args[0]).to.deep.equal([mockUri.toString()]);
    });
@@ -179,7 +179,7 @@ suite('getOppositeEndpointUri', () => {
    let mockShowInformationMessage;
    let mockShowWarningMessage;
    let mockShowQuickPick;
-   let mockGetFileOrFolderUri;
+   let mockgetFileFolderOrDocumentUri;
    let mockGetDefaultEndpoints;
 
    suiteSetup(async () => {
@@ -192,7 +192,7 @@ suite('getOppositeEndpointUri', () => {
       mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
       mockShowWarningMessage = sandbox.stub(vscode.window, 'showWarningMessage');
       mockShowQuickPick = sandbox.stub(vscode.window, 'showQuickPick');
-      mockGetFileOrFolderUri = sandbox.stub();
+      mockgetFileFolderOrDocumentUri = sandbox.stub();
       mockGetDefaultEndpoints = sandbox.stub();
    });
 
@@ -221,7 +221,7 @@ suite('getOppositeEndpointUri', () => {
       ];
       mockGetDefaultEndpoints.returns(endpoints);
       mockShowQuickPick.resolves('Endpoint 2');
-      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
+      mockgetFileFolderOrDocumentUri.callsFake(uri => vscode.Uri.parse(uri));
 
       const result = await getOppositeEndpointUri('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
       expect(result).to.be.an('array');
@@ -237,7 +237,7 @@ suite('getLsafPath', () => {
    let sandbox;
    let mockShowInformationMessage;
    let mockShowWarningMessage;
-   let mockGetFileOrFolderUri;
+   let mockgetFileFolderOrDocumentUri;
    let mockGetDefaultEndpoints;
 
    suiteSetup(async () => {
@@ -250,7 +250,7 @@ suite('getLsafPath', () => {
       sandbox = sinon.createSandbox();
       mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
       mockShowWarningMessage = sandbox.stub(vscode.window, 'showWarningMessage');
-      mockGetFileOrFolderUri = sandbox.stub();
+      mockgetFileFolderOrDocumentUri = sandbox.stub();
       mockGetDefaultEndpoints = sandbox.stub();
    });
 
@@ -265,7 +265,7 @@ suite('getLsafPath', () => {
    });
 
    test('should return null when fileOrFolderUri is not retrieved', async () => {
-      mockGetFileOrFolderUri.returns(null);
+      mockgetFileFolderOrDocumentUri.returns(null);
       const result = await getLsafPath('invalid-uri', mockGetDefaultEndpoints);
       expect(result).to.be.null;
       expect(mockShowWarningMessage.calledOnce).to.be.true;
@@ -274,7 +274,7 @@ suite('getLsafPath', () => {
 
    test('should return null when no endpoints are defined', async () => {
       mockGetDefaultEndpoints.returns([]);
-      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///path/to/file'));
+      mockgetFileFolderOrDocumentUri.returns(vscode.Uri.parse('file:///path/to/file'));
       const result = await getLsafPath('file:///path/to/file', mockGetDefaultEndpoints);
       expect(result).to.be.null;
       expect(mockShowWarningMessage.calledOnce).to.be.true;
@@ -286,7 +286,7 @@ suite('getLsafPath', () => {
          { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
       ];
       mockGetDefaultEndpoints.returns(endpoints);
-      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///path/to/file'));
+      mockgetFileFolderOrDocumentUri.returns(vscode.Uri.parse('file:///path/to/file'));
       const result = await getLsafPath('file:///path/to/file', mockGetDefaultEndpoints);
       expect(result).to.be.null;
       expect(mockShowWarningMessage.calledOnce).to.be.true;
@@ -298,7 +298,7 @@ suite('getLsafPath', () => {
          { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
       ];
       mockGetDefaultEndpoints.returns(endpoints);
-      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
+      mockgetFileFolderOrDocumentUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
       const result = await getLsafPath('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
       expect(result).to.equal('/path/to/file');
       expect(mockShowInformationMessage.calledOnce).to.be.true;
@@ -311,7 +311,7 @@ suite('getLsafPath', () => {
          { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
       ];
       mockGetDefaultEndpoints.returns(endpoints);
-      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
+      mockgetFileFolderOrDocumentUri.callsFake(uri => vscode.Uri.parse(uri));
       const fileOrFolders = ['file:///endpoint1/path/to/file1', 'file:///endpoint1/path/to/file2'];
       const result = await getLsafPath(fileOrFolders, mockGetDefaultEndpoints);
       expect(result).to.be.an('array');
@@ -329,7 +329,7 @@ suite('getLocalPath', () => {
    let mockShowInformationMessage;
    let mockShowWarningMessage;
    let mockShowQuickPick;
-   let mockGetFileOrFolderUri;
+   let mockgetFileFolderOrDocumentUri;
    let mockGetDefaultEndpoints;
 
    suiteSetup(async () => {
@@ -343,7 +343,7 @@ suite('getLocalPath', () => {
       mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
       mockShowWarningMessage = sandbox.stub(vscode.window, 'showWarningMessage');
       mockShowQuickPick = sandbox.stub(vscode.window, 'showQuickPick');
-      mockGetFileOrFolderUri = sandbox.stub();
+      mockgetFileFolderOrDocumentUri = sandbox.stub();
       mockGetDefaultEndpoints = sandbox.stub();
    });
 
@@ -358,7 +358,7 @@ suite('getLocalPath', () => {
    });
 
    test('should return null when fileOrFolderUri is not retrieved', async () => {
-      mockGetFileOrFolderUri.returns(null);
+      mockgetFileFolderOrDocumentUri.returns(null);
       const result = await getLocalPath('invalid-uri', mockGetDefaultEndpoints);
       expect(result).to.be.null;
       expect(mockShowWarningMessage.calledOnce).to.be.true;
@@ -367,7 +367,7 @@ suite('getLocalPath', () => {
 
    test('should return null when no endpoints are defined', async () => {
       mockGetDefaultEndpoints.returns([]);
-      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///path/to/file'));
+      mockgetFileFolderOrDocumentUri.returns(vscode.Uri.parse('file:///path/to/file'));
       const result = await getLocalPath('file:///path/to/file', mockGetDefaultEndpoints);
       expect(result).to.be.null;
       expect(mockShowWarningMessage.calledOnce).to.be.true;
@@ -379,7 +379,7 @@ suite('getLocalPath', () => {
          { uri: vscode.Uri.parse('http:///endpoint1'), label: 'Endpoint 1' }
       ];
       mockGetDefaultEndpoints.returns(endpoints);
-      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///path/to/file'));
+      mockgetFileFolderOrDocumentUri.returns(vscode.Uri.parse('file:///path/to/file'));
       const result = await getLocalPath('file:///path/to/file', mockGetDefaultEndpoints);
       expect(result).to.be.null;
       expect(mockShowWarningMessage.calledOnce).to.be.true;
@@ -391,7 +391,7 @@ suite('getLocalPath', () => {
          { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
       ];
       mockGetDefaultEndpoints.returns(endpoints);
-      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
+      mockgetFileFolderOrDocumentUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
       const result = await getLocalPath('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
       if (process.platform === 'win32') {
          expect(result).to.equal('\\endpoint1\\path\\to\\file');
@@ -408,7 +408,7 @@ suite('getLocalPath', () => {
          { uri: vscode.Uri.parse('file:///endpoint1'), label: 'Endpoint 1' }
       ];
       mockGetDefaultEndpoints.returns(endpoints);
-      mockGetFileOrFolderUri.callsFake(uri => vscode.Uri.parse(uri));
+      mockgetFileFolderOrDocumentUri.callsFake(uri => vscode.Uri.parse(uri));
       const fileOrFolders = ['file:///endpoint1/path/to/file1', 'file:///endpoint1/path/to/file2'];
       const result = await getLocalPath(fileOrFolders, mockGetDefaultEndpoints);
       expect(result).to.be.an('array');
@@ -429,7 +429,7 @@ suite('getLocalPath', () => {
       ];
       mockGetDefaultEndpoints.returns(endpoints);
       mockShowQuickPick.resolves(null);
-      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
+      mockgetFileFolderOrDocumentUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
       const result = await getLocalPath('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
       expect(result).to.be.null;
       expect(mockShowWarningMessage.calledOnce).to.be.true;
@@ -443,7 +443,7 @@ suite('getLocalPath', () => {
       ];
       mockGetDefaultEndpoints.returns(endpoints);
       mockShowQuickPick.resolves('Endpoint 2');
-      mockGetFileOrFolderUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
+      mockgetFileFolderOrDocumentUri.returns(vscode.Uri.parse('file:///endpoint1/path/to/file'));
       const result = await getLocalPath('file:///endpoint1/path/to/file', mockGetDefaultEndpoints);
       if (process.platform === 'win32') {
          expect(result).to.equal('\\endpoint2\\path\\to\\file');
@@ -1067,7 +1067,7 @@ const { copyToOppositeEndpoint } = require('../../src/utils.js');
 suite('copyToOppositeEndpoint', () => {
    let expect;
    let sandbox;
-   let mockGetFileOrFolderUri;
+   let mockgetFileFolderOrDocumentUri;
    let mockGetOppositeEndpointUri;
    let mockShowInformationMessage, mockShowWarningMessage, mockShowErrorMessage;
    let mockFs;
@@ -1080,7 +1080,7 @@ suite('copyToOppositeEndpoint', () => {
 
    setup(() => {
       sandbox = sinon.createSandbox();
-      mockGetFileOrFolderUri = sandbox.stub();
+      mockgetFileFolderOrDocumentUri = sandbox.stub();
       mockGetOppositeEndpointUri = sandbox.stub();
       mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
       mockShowWarningMessage = sandbox.stub(vscode.window, 'showWarningMessage');
@@ -1103,16 +1103,16 @@ suite('copyToOppositeEndpoint', () => {
 
    test('should show information message when fileOrFolder is not provided', async () => {
       // const mockShowInformationMessage = sandbox.stub(vscode.window, 'showInformationMessage');
-      await copyToOppositeEndpoint(null, 'oppositeEndpoint', 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      await copyToOppositeEndpoint(null, 'oppositeEndpoint', 'copyComment', mockgetFileFolderOrDocumentUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
       expect(mockShowInformationMessage.calledOnce).to.be.true;
       expect(mockShowInformationMessage.firstCall.args[0]).to.include('no file or folder specified');
    });
 
    test('should show warning message when oppositeEndpoint is not provided', async () => {
       const fileOrFolderUri = vscode.Uri.file('/path/to/file.txt');
-      mockGetFileOrFolderUri.returns(fileOrFolderUri);
+      mockgetFileFolderOrDocumentUri.returns(fileOrFolderUri);
       mockGetOppositeEndpointUri.returns(null);
-      await copyToOppositeEndpoint('/path/to/file.txt', null, 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      await copyToOppositeEndpoint('/path/to/file.txt', null, 'copyComment', mockgetFileFolderOrDocumentUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
       expect(mockShowWarningMessage.calledOnce).to.be.true;
       expect(mockShowWarningMessage.firstCall.args[0]).to.include('No opposite endpoint specified');
    });
@@ -1120,10 +1120,10 @@ suite('copyToOppositeEndpoint', () => {
    test('should copy file or folder passed as strings to opposite endpoint', async () => {
       const fileOrFolderUri = vscode.Uri.file('/path/to/file.txt');
       const oppositeEndpointUri = vscode.Uri.file('/path/to/opposite/file.txt');
-      mockGetFileOrFolderUri.returns(fileOrFolderUri);
+      mockgetFileFolderOrDocumentUri.returns(fileOrFolderUri);
       mockGetOppositeEndpointUri.returns(oppositeEndpointUri);
       mockFs.stat.resolves({ type: vscode.FileType.File });
-      await copyToOppositeEndpoint('/path/to/file.txt', '/path/to/opposite/file.txt', 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      await copyToOppositeEndpoint('/path/to/file.txt', '/path/to/opposite/file.txt', 'copyComment', mockgetFileFolderOrDocumentUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
       expect(mockFs.copy.calledOnce).to.be.true;
       expect(mockFs.copy.firstCall.args[0].toString()).to.equal(fileOrFolderUri.toString());
       expect(mockFs.copy.firstCall.args[1].toString()).to.equal(oppositeEndpointUri.toString());
@@ -1134,10 +1134,10 @@ suite('copyToOppositeEndpoint', () => {
    test('should copy file or folder passed as URIs to opposite endpoint', async () => {
       const fileOrFolderUri = vscode.Uri.file('/path/to/file.txt');
       const oppositeEndpointUri = vscode.Uri.file('/path/to/opposite/file.txt');
-      mockGetFileOrFolderUri.returns(fileOrFolderUri);
+      mockgetFileFolderOrDocumentUri.returns(fileOrFolderUri);
       mockGetOppositeEndpointUri.returns(oppositeEndpointUri);
       mockFs.stat.resolves({ type: vscode.FileType.File });
-      await copyToOppositeEndpoint(fileOrFolderUri, oppositeEndpointUri, 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      await copyToOppositeEndpoint(fileOrFolderUri, oppositeEndpointUri, 'copyComment', mockgetFileFolderOrDocumentUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
       expect(mockFs.copy.calledOnce).to.be.true;
       expect(mockFs.copy.firstCall.args[0].toString()).to.equal(fileOrFolderUri.toString());
       expect(mockFs.copy.firstCall.args[1].toString()).to.equal(oppositeEndpointUri.toString());
@@ -1150,11 +1150,11 @@ suite('copyToOppositeEndpoint', () => {
       const fileOrFolderUri = vscode.Uri.file('/path/to/file.txt');
       const oppositeEndpointUri = vscode.Uri.file('/path/to/opposite/file.txt');
       const errorMessage = 'Error copying file';
-      mockGetFileOrFolderUri.returns(fileOrFolderUri);
+      mockgetFileFolderOrDocumentUri.returns(fileOrFolderUri);
       mockGetOppositeEndpointUri.returns(oppositeEndpointUri);
       mockFs.stat.resolves({ type: vscode.FileType.File });
       mockFs.copy.rejects(new Error(errorMessage));
-      await copyToOppositeEndpoint(fileOrFolderUri, oppositeEndpointUri, 'copyComment', mockGetFileOrFolderUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
+      await copyToOppositeEndpoint(fileOrFolderUri, oppositeEndpointUri, 'copyComment', mockgetFileFolderOrDocumentUri, mockGetOppositeEndpointUri, mockFs, mockLogger);
       expect(mockFs.copy.calledOnce).to.be.true;
       expect(mockLogger.error.calledOnce).to.be.true;
       expect(mockLogger.error.firstCall.args[0]).to.include(`Error copying ${fileOrFolderUri} to ${oppositeEndpointUri}: ${errorMessage}`);
