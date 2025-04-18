@@ -6,11 +6,52 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Run LSAF Zip Test",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/test/specific-zip-test"
+			],
+			"outFiles": [
+				"${workspaceFolder}/src/**/*.js"
+			],
+			"preLaunchTask": "set-main-src"
+		},
+		{
+			"name": "Run Extension Tests with LSAF",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/test/vscode"
+			],
+			"outFiles": [
+				"${workspaceFolder}/out/**/*.js"
+			],
+			"preLaunchTask": "${defaultBuildTask}"
+		},
+		{
 			"name": "Run Extension",
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
+			],
+			"outFiles": [
+				"${workspaceFolder}/out/**/*.js"
+			],
+			"preLaunchTask": "${defaultBuildTask}"
+		},
+		{
+			"name": "Run Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--force-node-api-uncaught-exceptions-policy=true"
 			], 
 			"outFiles": [
 				"${workspaceFolder}/src/**/*.js"
@@ -22,7 +63,8 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--force-node-api-uncaught-exceptions-policy=true"
 			],
 			"outFiles": [
 				"${workspaceFolder}/src/**/*.js"
@@ -33,7 +75,8 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/dist"
+				"--extensionDevelopmentPath=${workspaceFolder}/dist",
+				"--force-node-api-uncaught-exceptions-policy=true"
 			],
 			"outFiles": [
 				 "${workspaceFolder}/dist/**/*.js"  // Point to the bundled JS files
@@ -47,10 +90,24 @@
 			"program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
 			"args": [
 				"--runInBand",
-				"--watchAll=false"
+				"--watchAll=false",
 			],
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen"
+		},
+		{
+			"name": "Test Workspace Verification",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/test/workspace-verify-runner"
+			],
+			"outFiles": [
+				"${workspaceFolder}/src/**/*.js"
+			],
+			"preLaunchTask": "set-main-src"
 		}
 	]
 }
