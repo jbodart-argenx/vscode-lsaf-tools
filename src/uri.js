@@ -174,7 +174,7 @@ async function existsUri(fileUri, type = null, stat = vscode.workspace.fs.stat) 
       try {
          let fileStat = await stat(fileUri);  // async operation
          if (fileStat) exists = true;
-         if (type != null) exists = (fileStat.type === type);
+            if (type != null) exists = Boolean(fileStat.type & type);  // & : bitwise AND operation
       } catch (error) {
          if (error) console.log(`Uri does not exist: ${fileUri},`, error?.code);
       }
