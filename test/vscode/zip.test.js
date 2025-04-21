@@ -244,6 +244,7 @@ suite('zip.js Integration Tests', () => {
     
     test('extractZip should extract a remote zip file', async function() {
         // Use existing remote zip file lsaf-repo://xarprod/general/biostat/macros/testing/dat/test_data.zip
+        // or vscode-vfs://github/argenxQuantitativeSciences/macros/testing/dat/test_data.zip
         // containing:
         // - test_data/ae.sas7bdat
         // - test_data/dm.sas7bdat
@@ -256,17 +257,20 @@ suite('zip.js Integration Tests', () => {
 
         // Skip test if prerequisites aren't met
         if (!diagnostics.lsafExtension) {
+            console.warn('Required extension "jbodart-argenx.vsce-lsaf-restapi-fs" is not installed.');
             this.skip('Required extension "jbodart-argenx.vsce-lsaf-restapi-fs" is not installed.');
             return;
         }
         
         if (diagnostics.extensionActivationResult !== 'success' && 
             diagnostics.extensionActivationResult !== 'already-active') {
+            console.warn(`Failed to activate required extension: ${JSON.stringify(diagnostics.extensionActivationResult)}`);
             this.skip(`Failed to activate required extension: ${JSON.stringify(diagnostics.extensionActivationResult)}`);
             return;
         }
         
         if (!diagnostics.canAccessRemoteFile) {
+            console.warn('Cannot access remote test file. Check your connection or permissions.');
             this.skip('Cannot access remote test file. Check your connection or permissions.');
             return;
         }
@@ -276,6 +280,7 @@ suite('zip.js Integration Tests', () => {
             if (diagnostics.extensionActivationResult === 'success') {
                 console.log("\nWaiting for LSAF extension to be ready after activation...");
                 await new Promise(resolve => setTimeout(resolve, 5000));
+                console.log("LSAF extension should be ready now.");
             }
             
             // Create output directory
@@ -284,12 +289,15 @@ suite('zip.js Integration Tests', () => {
             
             // Remote zip file URI
             const remoteZipFileUri = vscode.Uri.parse('lsaf-repo://xarprod/general/biostat/macros/testing/dat/test_data.zip');
-            console.log(`Extracting remote zip file from: ${remoteZipFileUri}`);
+            // const remoteZipFileUri = vscode.Uri.parse('vscode-vfs://github/argenxQuantitativeSciences/macros/testing/dat/test_data.zip');
+            // const remoteZipFileUri = vscode.Uri.parse('file:///c:/Users/jbodart/lsaf/files/general/biostat/macros/testing/dat/test_data.zip');
+            console.log(`Extracting remote zip file from: ${remoteZipFileUri} ...`);
             
             // Extract the remote zip file
             await extractZip(remoteZipFileUri, outputDirUri, false);
             
             // Give the file system a moment to complete all writes
+            console.log("Give the file system a moment to complete all writes...");
             await new Promise(resolve => setTimeout(resolve, 5000));
             
             // Use glob to find all files recursively
