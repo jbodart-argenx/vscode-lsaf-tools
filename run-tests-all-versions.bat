@@ -1,27 +1,47 @@
 @echo off
-rem ==========================================================================
-rem VS Code Extension Test Runner for Multiple VS Code Versions
-rem ==========================================================================
-rem
-rem This batch file runs tests for the VS Code extension against:
-rem   1. The version specified in package.json (minimum required version)
-rem   2. The latest stable VS Code version
-rem
-rem The same functionality is available through npm scripts:
-rem   - npm run test:vscode         (Tests with version from package.json)
-rem   - npm run test:vscode:stable  (Tests with latest stable VS Code)
-rem   - npm run test:vscode:all     (Tests with both versions)
-rem
-rem This script is useful for quick manual testing during development
-rem and for Windows-specific CI/CD pipelines.
-rem
-rem For Linux/macOS users, use run-tests-all-versions.sh instead.
-rem ==========================================================================
+REM ==========================================================================
+REM VS Code Extension Consolidated Test Runner
+REM ==========================================================================
+REM
+REM This batch file runs the consolidated test runner for the LSAF Tools
+REM extension, which includes:
+REM   1. Jest unit tests
+REM   2. VS Code integration tests across multiple VS Code versions:
+REM      - stable (latest stable VS Code release)
+REM      - 1.83.0 (specific version)
+REM      - 1.71.2 (minimum required version from package.json)
+REM
+REM The consolidated test runner provides a unified report showing the
+REM status of all test types and saves detailed reports to the test-results
+REM directory.
+REM
+REM The same functionality is available through npm script:
+REM   - npm run test:consolidated
+REM
+REM For Unix/Linux/macOS users, use run-tests-all-versions.sh instead.
+REM ==========================================================================
 
-echo Running tests with VS Code version from package.json...
-call npx @vscode/test-cli
-echo.
-echo Running tests with latest stable VS Code version...
-set VSCODE_TEST_VERSION=stable
-call npx @vscode/test-cli
-set VSCODE_TEST_VERSION=
+echo Running Consolidated Tests for LSAF Tools Extension
+echo ================================================
+
+REM Make sure node_modules\.bin is in the PATH
+set PATH=%PATH%;%~dp0node_modules\.bin
+
+REM Set environment variables for test run
+set NODE_ENV=test
+set NODE_OPTIONS=--max-old-space-size=4096
+
+REM Ensure the test-results directory exists
+if not exist test-results mkdir test-results
+
+REM Run the consolidated test script
+node "%~dp0run-consolidated-tests.js"
+
+REM Check the exit code
+if %errorlevel% neq 0 (
+  echo Tests failed with exit code %errorlevel%
+  exit /b %errorlevel%
+) else (
+  echo All tests completed successfully!
+  exit /b 0
+)

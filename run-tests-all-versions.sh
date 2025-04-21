@@ -1,19 +1,25 @@
 #!/bin/bash
 # ==========================================================================
-# VS Code Extension Test Runner for Multiple VS Code Versions
+# VS Code Extension Consolidated Test Runner
 # ==========================================================================
 #
-# This shell script runs tests for the VS Code extension against:
-#   1. The version specified in package.json (minimum required version)
-#   2. The latest stable VS Code version
+# This shell script runs the consolidated test runner for the LSAF Tools
+# extension, which includes:
+#   1. Jest unit tests
+#   2. VS Code integration tests across multiple VS Code versions:
+#      - stable (latest stable VS Code release)
+#      - 1.83.0 (specific version)
+#      - 1.71.2 (minimum required version from package.json)
 #
-# The same functionality is available through npm scripts:
-#   - npm run test:vscode         (Tests with version from package.json)
-#   - npm run test:vscode:stable  (Tests with latest stable VS Code)
-#   - npm run test:vscode:all     (Tests with both versions)
+# The consolidated test runner provides a unified report showing the
+# status of all test types and saves detailed reports to the test-results
+# directory.
 #
-# This script is useful for quick manual testing during development
-# and for Linux/macOS-specific CI/CD pipelines.
+# The same functionality is available through npm script:
+#   - npm run test:consolidated
+#
+# This script is useful for both manual testing during development
+# and for Unix/Linux/macOS-specific CI/CD pipelines.
 #
 # For Windows users, use run-tests-all-versions.bat instead.
 #
@@ -21,13 +27,20 @@
 #   chmod +x run-tests-all-versions.sh
 # ==========================================================================
 
-echo "Running tests with VS Code version from package.json..."
-npx @vscode/test-cli
+echo "Running Consolidated Tests for LSAF Tools Extension"
+echo "================================================"
 
-echo ""
-echo "Running tests with latest stable VS Code version..."
-export VSCODE_TEST_VERSION=stable
-npx @vscode/test-cli
+# Set environment variables for test run
+export NODE_ENV=test
 
-# Clean up environment
-unset VSCODE_TEST_VERSION
+# Run the consolidated test script
+node run-consolidated-tests.js
+
+# Check the exit code
+if [ $? -ne 0 ]; then
+  echo "Tests failed with exit code $?"
+  exit $?
+else
+  echo "All tests completed successfully!"
+  exit 0
+fi
