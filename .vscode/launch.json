@@ -6,47 +6,20 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Run LSAF Zip Test",
+			"name": "Run Extension",
 			"type": "extensionHost",
 			"request": "launch",
-			"runtimeExecutable": "${execPath}",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/test/specific-zip-test"
+				"${workspaceFolder}/test-fixtures/test-fixtures.code-workspace",
+				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
 			"outFiles": [
 				"${workspaceFolder}/src/**/*.js"
 			],
-			"preLaunchTask": "set-main-src"
-		},
-		{
-			"name": "Run Extension Tests with LSAF",
-			"type": "extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/test/vscode"
-			],
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			],
 			"preLaunchTask": "${defaultBuildTask}"
 		},
 		{
-			"name": "Run Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
-			],
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			],
-			"preLaunchTask": "${defaultBuildTask}"
-		},
-		{
-			"name": "Run Extension",
+			"name": "Run Bundled Extension",
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
@@ -54,7 +27,7 @@
 				"--force-node-api-uncaught-exceptions-policy=true"
 			], 
 			"outFiles": [
-				"${workspaceFolder}/src/**/*.js"
+				"${workspaceFolder}/dist/**/*.js"
 			],
          "preLaunchTask": "set-main-src"
 		},
@@ -94,20 +67,6 @@
 			],
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen"
-		},
-		{
-			"name": "Test Workspace Verification",
-			"type": "extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/test/workspace-verify-runner"
-			],
-			"outFiles": [
-				"${workspaceFolder}/src/**/*.js"
-			],
-			"preLaunchTask": "set-main-src"
 		}
 	]
 }
