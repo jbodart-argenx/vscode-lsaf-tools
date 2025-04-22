@@ -138,6 +138,16 @@ async function getOppositeEndpointUri(fileOrFolder, getDefaultEndPointsFn = asyn
    return null;
 }
 
+function getFilenameFromUri(fileUri) {
+   if (fileUri && fileUri instanceof vscode.Uri) {
+      return fileUri.path.split(/[\\/]/).slice(-1)[0];
+   } else {
+      console.warn(`(getFormData) fileUri is not a Uri: ${fileUri}`);
+      vscode.window.showErrorMessage(`(getFormData) fileUri is not a Uri: ${fileUri}`);
+      throw new Error(`(getFormData) fileUri is not a Uri: ${fileUri}`);
+   }
+}
+
 async function getLsafPath(fileOrFolder, getDefaultEndPointsFn = async () => getDefaultEndpoints()) {
    if (Array.isArray(fileOrFolder)) {
       let results = await Promise.allSettled(fileOrFolder.map(fileOrFolder => getLsafPath(fileOrFolder, getDefaultEndPointsFn)));
@@ -293,15 +303,6 @@ async function getFormData(fileUri, fileContents) {
    throw new Error(`(getFormData) Invalid fileUri: ${fileUri}`);
 }
 
-function getFilenameFromUri(fileUri) {
-   if (fileUri && fileUri instanceof vscode.Uri) {
-      return fileUri.path.split(/[\\/]/).slice(-1)[0];
-   } else {
-      console.warn(`(getFormData) fileUri is not a Uri: ${fileUri}`);
-      vscode.window.showErrorMessage(`(getFormData) fileUri is not a Uri: ${fileUri}`);
-      throw new Error(`(getFormData) fileUri is not a Uri: ${fileUri}`);
-   }
-}
 
 async function createFormDataFromContents(formdata, fileContents, filename) {
    const { Readable } = await import('stream');
