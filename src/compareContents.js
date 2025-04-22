@@ -14,13 +14,15 @@ async function getFolderContents(folderUri) {
     if (!folderUri || !(folderUri instanceof vscode.Uri)) {
         vscode.window.showErrorMessage(`(getFolderContents) Invalid folder URI provided: ${folderUri}`);
         console.error('(getFolderContents) Invalid folder URI provided:', folderUri);
-        throw new Error('Invalid folder URI provided.');
+        // throw new Error('Invalid folder URI provided.');
+        return null;
     }
 
     if (! await existsUri(folderUri, vscode.FileType.Directory)) {
         vscode.window.showErrorMessage(`(getFolderContents) Folder does not exist or is not a directory: ${pathFromUri(folderUri)}`);
         console.error(`(getFolderContents) Folder does not exist or is not a directory: ${pathFromUri(folderUri)}`);
-        throw new Error(`(getFolderContents) Folder does not exist or is not a directory: ${pathFromUri(folderUri)}`);
+        // throw new Error(`(getFolderContents) Folder does not exist or is not a directory: ${pathFromUri(folderUri)}`);
+        return [];
     }
 
     let contents = [];
@@ -151,24 +153,24 @@ async function textCompare(file1, file2) {
 }
 
 async function mergeFolderContents(contents1, contents2, doTextCompare = false, parents = []) {
-    if (!Array.isArray(contents1) || !Array.isArray(contents2)) {
+    if ((!Array.isArray(contents1)  && contents1 != null )|| (!Array.isArray(contents2) && contents2 != null)) {
         debugger;
         vscode.window.showErrorMessage(`(mergeFolderContents) Error merging folder contents: ${contents1}, ${contents2}`);
         console.error('(mergeFolderContents) Error merging folder contents:', contents1, contents2);
         throw new Error('Error merging folder contents.');
     }
-    if (contents1.length === 0 && contents2.length === 0) {
+    if ((contents1 ?? []).length === 0 && (contents2 ?? []).length === 0) {
         debugger;
         return [];
     }
     const [folder1, folder2] = parents;
-    let folder1Names = new Set([...(contents1.map(folder => folder.name))]);
-    let folder2Names = new Set([...(contents2.map(folder => folder.name))]);
+    let folder1Names = new Set([...((contents1 ?? []).map(folder => folder.name))]);
+    let folder2Names = new Set([...((contents2 ?? []).map(folder => folder.name))]);
     let uniqueNames = new Set([...folder1Names, ...folder2Names]);
     const bothFoldersContents = [];
     uniqueNames.forEach(name => {
-        const folder1index = contents1.findIndex(file => file.name === name);
-        const folder2index = contents2.findIndex(file => file.name === name);
+        const folder1index = (contents1 ?? []).findIndex(file => file.name === name);
+        const folder2index = (contents2 ?? []).findIndex(file => file.name === name);
         bothFoldersContents.push(
             {
                 name,
@@ -264,12 +266,12 @@ async function compareFolderContents(folder1, folder2, context, textCompare = fa
     if (! await existsUri(folderUri1, vscode.FileType.Directory)) {
         vscode.window.showErrorMessage(`Folder 1 does not exist or is not a directory: ${pathFromUri(folderUri1)}`);
         logger.error(`Folder 1 does not exist or is not a directory: ${pathFromUri(folderUri1)}`);
-        throw new Error(`Folder 1 does not exist or is not a directory: ${pathFromUri(folderUri1)}`);
+        // throw new Error(`Folder 1 does not exist or is not a directory: ${pathFromUri(folderUri1)}`);
     }
     if (! await existsUri(folderUri2, vscode.FileType.Directory)) {
         vscode.window.showErrorMessage(`Folder 2 does not exist or is not a directory: ${pathFromUri(folderUri2)}`);
         logger.error(`Folder 2 does not exist or is not a directory: ${pathFromUri(folderUri2)}`);
-        throw new Error(`Folder 2 does not exist or is not a directory: ${pathFromUri(folderUri2)}`);
+        // throw new Error(`Folder 2 does not exist or is not a directory: ${pathFromUri(folderUri2)}`);
     }
 
     let [contents1, contents2] = await Promise.all([folderUri1, folderUri2].map(getFolderContents));
@@ -284,7 +286,7 @@ async function compareFolderContents(folder1, folder2, context, textCompare = fa
     });
     const webViewReady = true;
     if (webViewReady) {
-        showTwoFoldersView(bothFoldersContents, folder1, folder2, context);
+        await showTwoFoldersView(bothFoldersContents, folder1, folder2, context);
     } else {
         showMultiLineText(bothFoldersContentsText,
             "Both Folders Contents", `Local folder: ${folder1}, Remote folder: ${folder2}`);
