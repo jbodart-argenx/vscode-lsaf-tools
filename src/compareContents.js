@@ -226,17 +226,34 @@ async function mergeFolderContents(contents1, contents2, doTextCompare = false, 
 
 
 async function compareFileContents(file1, file2, logger = console) {
-    const file1Uri = uriFromString(file1);
-    const file2Uri = uriFromString(file2);
+    let file1Uri = uriFromString(file1);
+    let file2Uri = uriFromString(file2);
+    let file1Exists = await existsUri(file1Uri);
+    let file2Exists = await existsUri(file2Uri);
+
     try {
-        const file1Label = file1Uri.scheme === 'file' ? 'Local' : `${file1Uri.authority} ${file1Uri.scheme.replace('lsaf-', '')}`;
-        const file2Label = file2Uri.scheme === 'file' ? 'Local' : `${file2Uri.authority} ${file2Uri.scheme.replace('lsaf-', '')}`;
+        const file1Label = (file1Uri.scheme === 'file' ? 'Local' : `${file1Uri.authority} ${file1Uri.scheme.replace('lsaf-', '')}`);
+        const file2Label = (file2Uri.scheme === 'file' ? 'Local' : `${file2Uri.authority} ${file2Uri.scheme.replace('lsaf-', '')}`);
+        // If file1 doesn't exist and create a temporary URI with untitled scheme
+        if (file1Uri && !file1Exists) {
+            // Create an untitled URI for an empty file
+            file1Uri = vscode.Uri.parse(`untitled:${file1Uri.path.split('/').pop() || 'Empty'}`);
+            logger.log(`File ${file1} doesn't exist, comparing against empty file.`);
+        }
+        // If file2 doesn't exist and create a temporary URI with untitled scheme
+        if (file2Uri && !file2Exists) {
+            // Create an untitled URI for an empty file
+            file2Uri = vscode.Uri.parse(`untitled:${file2Uri.path.split('/').pop() || 'Empty'}`);
+            logger.log(`File ${file2} doesn't exist, comparing against empty file.`);
+        }
+        
+
         await vscode.commands.executeCommand(
             "vscode.diff",
             file2Uri,  // left file, non-editable (original)
             file1Uri,      // right file, editable (modified)
-            //`${oppositeEndpointUri} ↔ ${fileOrFolderUri}`,  // Diff editor title
-            `${file1Uri.path}`.split('/').pop() + ` (${file2Label} ↔ ${file1Label})`,  // Diff editor title
+//`${oppositeEndpointUri} ↔ ${fileOrFolderUri}`,  // Diff editor title
+            `${file1Uri.path}`.split('/').pop() + ` (${file2Label+ (file2Exists ? '' : '❌')} ↔ ${file1Label+ (file1Exists ? '' : '❌')})`,  // Diff editor title
             {
                 preview: false,   // ensures the diff editor remains open until explicitly closed.
                 selection: null,  // No specific selection is highlighted in the diff editor.
