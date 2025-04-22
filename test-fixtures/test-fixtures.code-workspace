@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../../../lsaf/files/general/biostat/macros"
 		}
 	],
 	"settings": {}
