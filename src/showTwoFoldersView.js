@@ -4,14 +4,15 @@ const os = require('os');
 const beautify = require('js-beautify').js_beautify;
 const isBinaryFile = require("isbinaryfile").isBinaryFile;
 
-const { uriFromString, pathFromUri, isValidUri } = require('./uri.js');
+const { uriFromString, pathFromUri, isValidUri, existsUri } = require('./uri.js');
 
 const joinPath = vscode.Uri.joinPath;
 
-function showTwoFoldersView(bothFoldersContents, folder1, folder2, context) {
+async function showTwoFoldersView(bothFoldersContents, folder1, folder2, context) {
 
     const { getFolderContents, mergeFolderContents, compareFolderContents, compareFileContents } = require('./compareContents.js');
     const { openFile } = require('./utils.js');
+    const { existsUri } = require('./uri.js');
 
     if (!folder1 || !folder2
         || !(folder1 instanceof vscode.Uri)
@@ -25,10 +26,14 @@ function showTwoFoldersView(bothFoldersContents, folder1, folder2, context) {
     const folder2Path = pathFromUri(folder2, true);
     const folder1Label = folder1.scheme === 'file' ? 'Local' : `${folder1.authority} ${folder1.scheme.replace('lsaf-', '')}`;
     const folder2Label = folder2.scheme === 'file' ? 'Local' : `${folder2.authority} ${folder2.scheme.replace('lsaf-', '')}`;
+    const folder1Exists = await existsUri(folder1, vscode.FileType.Directory);
+    const folder2Exists = await existsUri(folder2, vscode.FileType.Directory);
 
     const panel = vscode.window.createWebviewPanel(
         "folderContents",  // webview identifier
-        `${path.basename(folder1Path)}/${" (" + folder1Label + " ↔ " + folder2Label + ")"}`, // title displayed
+        `${path.basename(folder1Path)}/${
+            " (" + folder1Label + (folder1Exists ? "" : "❌") +" ↔ " 
+            + folder2Label + (folder2Exists ? "" : "❌") + ")"}`, // title displayed
         vscode.ViewColumn.One,
         {
             enableScripts: true, // Allow running JavaScript in the Webview
@@ -39,11 +44,15 @@ function showTwoFoldersView(bothFoldersContents, folder1, folder2, context) {
     );
 
     // provide more details in tooltip displayed when hovering over the tooltip - does not work!
-    panel.title = `${path.basename(folder1Path)}/${" (" + folder1Label + " ↔ " + folder2Label + ")"}`;
-    panel.description = `${folder1Path}/ (${folder1Label}) ↔ ${folder2Path}/ (${folder2Label})}`;
+    panel.title = `${path.basename(folder1Path)}/${
+        " (" + folder1Label + (folder1Exists ? "" : "❌") + " ↔ "
+        + folder2Label + (folder2Exists ? "" : "❌") + ")"}`;
+    panel.description = `${
+        folder1Path}/ (${folder1Label + (folder1Exists ? "" : "❌")}) ↔ ${
+        folder2Path}/ (${folder2Label + (folder2Exists ? "" : "❌")})}`;
 
     // Set the HTML content
-    panel.webview.html = getTwoFoldersWebviewContent(bothFoldersContents, folder1, folder2);
+    panel.webview.html = await getTwoFoldersWebviewContent(bothFoldersContents, folder1, folder2);
 
     // Handle messages from the Webview
     panel.webview.onDidReceiveMessage(
@@ -65,24 +74,24 @@ function showTwoFoldersView(bothFoldersContents, folder1, folder2, context) {
             if (oppositeParent && isValidUri(oppositeParent)) {
                 oppositeParentUri = uriFromString(oppositeParent);
                 oppositeFileUri = vscode.Uri.joinPath(oppositeParentUri, String(fname));
-                // oppositeLabel = oppositeParentUri.scheme === 'file' ? 'Local' : `${oppositeParentUri.authority} ${oppositeParentUri.scheme.replace('lsaf-', '')}`;
+                oppositeLabel = oppositeParentUri.scheme === 'file' ? 'Local' : `${oppositeParentUri.authority} ${oppositeParentUri.scheme.replace('lsaf-', '')}`;
             }
             if (folder1) folderUri1 = uriFromString(folder1);
             if (folder2) folderUri2 = uriFromString(folder2);
             switch (command) {
                 case "openFile":
                     isFolder = false;
-                    if (fileUri instanceof vscode.Uri) {
-
-                    } else {
+                    if (! (fileUri instanceof vscode.Uri)) {
+                        console.error(`message.command is: "${command}", but fileUri is invalid: ${fileUri}`);
+                        vscode.window.showErrorMessage(`message.command is: "${command}", but fileUri is invalid: ${fileUri}`);
                         throw new Error(`message.command is: "${command}", but fileUri is invalid: ${fileUri}`);
                     }
                     break;
                 case "openSubFolder":
                     isFolder = true;
-                    if (fileUri instanceof vscode.Uri) {
-
-                    } else {
+                    if (!(fileUri instanceof vscode.Uri)) {
+                        console.error(`message.command is: "${command}", but fileUri is invalid: ${fileUri}`);
+                        vscode.window.showErrorMessage(`message.command is: "${command}", but fileUri is invalid: ${fileUri}`);
                         throw new Error(`message.command is: "${command}", but fileUri is invalid: ${fileUri}`);
                     }
                     break;
@@ -90,7 +99,7 @@ function showTwoFoldersView(bothFoldersContents, folder1, folder2, context) {
                     if (folderUri1 instanceof vscode.Uri && folderUri2 instanceof vscode.Uri) {
                         let [contents1, contents2] = await Promise.all([folderUri1, folderUri2].map(getFolderContents));
                         const bothFoldersContents = await mergeFolderContents(contents1, contents2, textCompare, [folderUri1, folderUri2]);
-                        panel.webview.html = getTwoFoldersWebviewContent(
+                        panel.webview.html = await getTwoFoldersWebviewContent(
                             bothFoldersContents,
                             folderUri1,
                             folderUri2
@@ -125,7 +134,7 @@ function showTwoFoldersView(bothFoldersContents, folder1, folder2, context) {
                         } else if (action === 'Compare') {
                             let [contents1, contents2] = await Promise.all([folderUri1, folderUri2].map(getFolderContents));
                             const bothFoldersContents = await mergeFolderContents(contents1, contents2);
-                            panel.webview.html = getTwoFoldersWebviewContent(
+                            panel.webview.html = await getTwoFoldersWebviewContent(
                                 bothFoldersContents,
                                 folderUri1,
                                 folderUri2
@@ -362,7 +371,7 @@ function highlightDiffs(value1, value2) {
 }
 
 
-function getTwoFoldersWebviewContent(bothFoldersContents, folder1, folder2) {
+async function getTwoFoldersWebviewContent(bothFoldersContents, folder1, folder2) {
     if (!Array.isArray(bothFoldersContents) || bothFoldersContents.length === 0) {
         debugger;
         console.warn('(getTwoFoldersWebviewContent) No files found in both folders:', bothFoldersContents);
@@ -370,8 +379,16 @@ function getTwoFoldersWebviewContent(bothFoldersContents, folder1, folder2) {
     }
     const folder1Path = pathFromUri(folder1, true);
     const folder2Path = pathFromUri(folder2, true);
-    const folder1Label = folder1.scheme === 'file' ? 'Local' : `${folder1.authority} ${(folder1.scheme || '').replace('lsaf-', '')}`;
-    const folder2Label = folder2.scheme === 'file' ? 'Local' : `${folder2.authority} ${(folder2.scheme || '').replace('lsaf-', '')}`;
+    const folder1Exists = await existsUri(folder1, vscode.FileType.Directory);
+    const folder2Exists = await existsUri(folder2, vscode.FileType.Directory);
+    const folder1Label = (folder1.scheme === 'file' ?
+        'Local' :
+        `${folder1.authority} ${(folder1.scheme || '').replace('lsaf-', '')}`)
+        + (folder1Exists ? "" : "❌");
+    const folder2Label = (folder2.scheme === 'file' ?
+        'Local' :
+        `${folder2.authority} ${(folder2.scheme || '').replace('lsaf-', '')}`)
+        + (folder2Exists ? "" : "❌");
 
     const textCompared = bothFoldersContents.filter(file => file.textCompare !== undefined).length > 0;
 
@@ -496,9 +513,9 @@ function getTwoFoldersWebviewContent(bothFoldersContents, folder1, folder2) {
              <thead>
                 <tr>
                    <!-- Headers for Local and Remote sections -->
-                   <th colspan="4" id="local-folder" class="local-folder folder-header">${folder1Path}</th>
+                   <th colspan="4" id="local-folder" class="local-folder folder-header">${folder1Path + (folder1Exists ? "" : "❌")}</th>
                    <th class="spacer"></th> <!-- Spacer column between the two sections -->
-                   <th colspan="4" id="remote-folder" class="remote-folder folder-header">${folder2Path}</th>
+                   <th colspan="4" id="remote-folder" class="remote-folder folder-header">${folder2Path + (folder2Exists ? "" : "❌")}</th>
                 </tr>
                 <tr>
                 <th onclick="sortTable(0)">Name</th>
