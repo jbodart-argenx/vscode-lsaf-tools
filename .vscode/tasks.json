@@ -1,32 +1,49 @@
 {
-   "version": "2.0.0",
-   "tasks": [
-      {
-         "label": "set-main-src and Watch",
-         "dependsOn": ["set-main-src", "Watch Task"],
-         "group": {
-            "kind": "build",
-            "isDefault": true
-         }
-      },
-      {
-         "label": "set-main-src",
-         "type": "shell",
-         "command": "node",
-         "args": ["setMain.js", "src"],
-         "problemMatcher": []
-      },
-      {
-         "label": "set-main-dist",
-         "type": "shell",
-         "command": "node",
-         "args": ["setMain.js", "dist"],
-         "problemMatcher": []
-      },
-      {
-         "label": "Watch Task",
-         "type": "shell",
-         "command": "npm run watch"
-      }
-   ]
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "set-main-src",
+            "type": "shell",
+            "command": "node",
+            "args": [
+                "setMain.js",
+                "src"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "set-main-dist",
+            "type": "shell",
+            "command": "node",
+            "args": [
+                "setMain.js",
+                "dist"
+            ]
+        },
+        {
+            "label": "Watch Task",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "watch"],
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "."
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "Watching for file changes."
+                }
+            }
+        },
+        {
+            "label": "set-main-src and Watch",
+            "dependsOn": ["set-main-src", "Watch Task"],
+            "dependsOrder": "sequence"
+        }
+    ]
 }
