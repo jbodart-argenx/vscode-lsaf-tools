@@ -165,7 +165,7 @@ function getBaseUri(param) {
 
 async function existsUri(fileUri, type = null, stat = vscode.workspace.fs.stat) {
    if (Array.isArray(fileUri)) {
-      return Promise.all(fileUri.map(uri => existsUri(uri, type, stat)));
+      return Promise.all(fileUri.map(async uri => existsUri(uri, type, stat)));  // 'await' not needed in callback as Promise.all() is already handling the promises returned by the map function
    }
    // type: vscode.FileType.File = 1 | vscode.FileType.Directory = 2 | vscode.FileType.SymbolicLink = 64
    let exists = false;
