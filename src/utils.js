@@ -41,7 +41,11 @@ function getFileFolderOrDocumentUri(fileOrFolder) {
 
 
 
-async function copyFileOrFolderUri(fileOrFolder, getUriFn = getFileFolderOrDocumentUri, copyFn = copyToClipboard) {
+async function copyFileOrFolderUri(fileOrFolder, getUriFn = null, copyFn = null) {
+   // Initialize functions at runtime to avoid circular reference
+   getUriFn = getUriFn || getFileFolderOrDocumentUri;
+   copyFn = copyFn || copyToClipboard;
+   
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(copyFileOrFolderUri) no file or folder specified, attempting to use Active Editor document.`);
    }
@@ -371,14 +375,19 @@ async function createFormDataFromWorkspace(formdata, fileUri, filename, readFile
    }
 }
 
-async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context, getFileFolderOrDocumentUri = getFileFolderOrDocumentUri,
-   getOppositeEndpointUri = getOppositeEndpointUri, logger = console, textCompare = false) {
+async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context, 
+   getUriFn = null, getOppositeFn = null, loggerFn = console, textCompare = false) {
+   
+   // Initialize functions at runtime to avoid circular reference
+   getUriFn = getUriFn || getFileFolderOrDocumentUri;
+   getOppositeFn = getOppositeFn || getOppositeEndpointUri;
+   const logger = loggerFn;
 
    // Ensure files or Folders and opposite endpoints are (arrays of) URIs
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(compareToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
-   const fileOrFolderUri = getFileFolderOrDocumentUri(fileOrFolder);
+   const fileOrFolderUri = getUriFn(fileOrFolder);
    if (!fileOrFolderUri) {
       vscode.window.showWarningMessage(`Failed to compare ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
       logger.error(`(compareToOppositeEndpoint) Failed to compare ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
@@ -388,7 +397,7 @@ async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context
    if (oppositeEndpoint) {
       oppositeEndpointUri = uriFromString(oppositeEndpoint);
    } else {
-      oppositeEndpointUri = await getOppositeEndpointUri(fileOrFolder);
+      oppositeEndpointUri = await getOppositeFn(fileOrFolder);
    }
    if (Array.isArray(oppositeEndpointUri) && oppositeEndpointUri.length <= 1) {
       oppositeEndpointUri = oppositeEndpointUri[0]; // Assuming we only need the first URI for single file/folder compare
@@ -411,7 +420,7 @@ async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context
          return null;
       }
       return await Promise.allSettled(fileOrFolderUri.map((uri, idx) => compareToOppositeEndpoint(uri, oppositeEndpointUri[idx], context,
-         getFileFolderOrDocumentUri, getOppositeEndpointUri, logger)));
+         getUriFn, getOppositeFn, logger)));
    }
    if (!oppositeEndpointUri) {
       vscode.window.showWarningMessage(`Failed to compare ${fileOrFolder} to opposite endpoint: could not identify opposite endpoint.`);
@@ -457,12 +466,17 @@ async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context
 }
 
 
-async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyComment, getFileFolderOrDocumentUri = getFileFolderOrDocumentUri,
-   getOppositeEndpointUri = getOppositeEndpointUri, fs = vscode.workspace.fs, logger = console) {
+async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyComment, 
+   getUriFn = null, getOppositeFn = null, fs = vscode.workspace.fs, logger = console) {
+   
+   // Initialize functions at runtime to avoid circular reference
+   getUriFn = getUriFn || getFileFolderOrDocumentUri;
+   getOppositeFn = getOppositeFn || getOppositeEndpointUri;
+   
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(copyToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
-   const fileOrFolderUri = getFileFolderOrDocumentUri(fileOrFolder);
+   const fileOrFolderUri = getUriFn(fileOrFolder);
    if (!fileOrFolderUri) {
       vscode.window.showWarningMessage(`Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
       logger.error(`(copyToOppositeEndpoint) Failed to copy ${fileOrFolder} to opposite endpoint: could not retrieve file or folder URI.`);
@@ -472,7 +486,7 @@ async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyCommen
    if (oppositeEndpoint) {
       oppositeEndpointUri = uriFromString(oppositeEndpoint);
    } else {
-      oppositeEndpointUri = await getOppositeEndpointUri(fileOrFolder);
+      oppositeEndpointUri = await getOppositeFn(fileOrFolder);
    }
    if (Array.isArray(oppositeEndpointUri) && oppositeEndpointUri.length <= 1) {
       oppositeEndpointUri = oppositeEndpointUri[0]; // Assuming we only need the first URI for single file/folder copy
@@ -766,7 +780,7 @@ async function openFile(uri) {
 }
 
 module.exports = {
-   getFileFolderOrDocumentUri: getFileFolderOrDocumentUri, getLsafPath, getLocalPath, copyFileOrFolderUri,
+   getFileFolderOrDocumentUri, getLsafPath, getLocalPath, copyFileOrFolderUri,
    getOppositeEndpointUri, copyToOppositeEndpoint, copyToClipboard, enterMultiLineComment,
    getFormData, getFilenameFromUri, createFormDataFromContents, getFileReadStreamAndCreateFormData,
    createFormDataFromFileSystem, createFormDataFromWorkspace, compareToOppositeEndpoint,
