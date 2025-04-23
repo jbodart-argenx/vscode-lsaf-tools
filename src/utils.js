@@ -1,6 +1,6 @@
 const vscode = require('vscode');
 const os = require('os');
-
+const path = require('path');
 const { exec } = require('child_process');
 
 const { compareFolderContents, compareFileContents } = require('./compareContents');
@@ -714,19 +714,55 @@ function openFileWithDefaultApp(filePath) {
 }
 
 
-function openFile(uri) {
-   if (uri && uri.scheme) {
-      openFileWithDefaultApp(uri.toString());
+async function openFile(uri) {
+   const { isBinaryFile } = await require("isbinaryfile");
+   const fileUri = uriFromString(uri);
+   let isBinary;
+   if (!fileUri) {  
+      const editor = vscode.window.activeTextEditor;
+      if (editor && editor.document?.uri && os.platform() === 'win32' && editor.document.uri.scheme === 'file') {
+         // File is already open in VSCode editor - we want to open it in its default app
+         openFileWithDefaultApp(editor.document.uri.toString());
+         return;
+      }
+   }
+   if (!fileUri instanceof vscode.Uri) {
+      console.warn(`(openFile) fileUri is not a Uri: ${fileUri}`);
+      vscode.window.showErrorMessage(`(openFile) fileUri is not a Uri: ${fileUri}`);
       return;
    }
-
-   const editor = vscode.window.activeTextEditor;
-   if (editor && editor.document.uri) {
-      openFileWithDefaultApp(editor.document.uri.toString());
-      return;
-   }
-
-   vscode.window.showInformationMessage('No editor is active. Select an editor or a file in the Explorer view.');
+   const ext = path.extname(fileUri.path).toLowerCase();
+   switch (ext) {
+      case '.docx':
+      case '.html':
+      case '.md':
+      case '.pdf':
+         await vscode.commands.executeCommand('vscode.open', fileUri);
+         break;
+      case '.sas7bdat':
+      case '.xpt':
+      case '.rds':
+      case '.csv':
+      case '.json':
+      case '.xlsx':
+      case '.xls':
+          await vscode.commands.executeCommand("table-viewer.openFileInWebview", fileUri);
+          break;
+      default:
+         if (fileUri.scheme === 'file') {
+            isBinary = await isBinaryFile(fileUri.fsPath);
+            if ((isBinary || ext === ".rtf") && os.platform() === 'win32') {
+               openFileWithDefaultApp(uri.toString());
+               return;
+            }
+            if (!isBinary) {
+                // Open the local file in the editor
+                const document = await vscode.workspace.openTextDocument(fileUri);
+                vscode.window.showTextDocument(document);
+            } 
+         }
+         vscode.commands.executeCommand('vscode.open', fileUri);
+  }
 }
 
 module.exports = {
