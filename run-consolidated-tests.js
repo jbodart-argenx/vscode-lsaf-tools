@@ -135,7 +135,9 @@ function runVSCodeTests(version) {
     version: version,
     duration: 0,
     output: '', // Will hold command output
-    failures: [] // Will hold test failures
+    failures: [], // Will hold test failures
+    passedTests: 0,
+    totalTests: 0
   };
   
   try {
@@ -160,6 +162,15 @@ function runVSCodeTests(version) {
     
     // Parse output for test failures
     const failureMatches = results.vscode[resultKey].output.match(/✖\s+(.*?)(?:\n|$)/g);
+    
+    // Parse output for total number of tests
+    const testCountMatch = results.vscode[resultKey].output.match(/(\d+) passing/i);
+    const testCount = testCountMatch ? parseInt(testCountMatch[1]) : 0;
+    const failureCount = failureMatches ? failureMatches.length : 0;
+    
+    results.vscode[resultKey].passedTests = testCount;
+    results.vscode[resultKey].totalTests = testCount + failureCount;
+    
     if (failureMatches) {
       results.vscode[resultKey].failures = failureMatches.map(match => match.trim());
     }
@@ -167,8 +178,8 @@ function runVSCodeTests(version) {
     results.vscode[resultKey].success = !failureMatches || failureMatches.length === 0;
     results.vscode[resultKey].duration = Date.now() - startTime;
     results.vscode[resultKey].message = results.vscode[resultKey].success 
-      ? 'All tests passed' 
-      : `${failureMatches.length} test(s) failed`;
+      ? `${results.vscode[resultKey].passedTests}/${results.vscode[resultKey].totalTests} tests passed` 
+      : `${results.vscode[resultKey].passedTests}/${results.vscode[resultKey].totalTests} tests passed (${failureMatches.length} failed)`;
     
     const statusIcon = results.vscode[resultKey].success ? `${colors.green}✓` : `${colors.red}✗`;
     console.log(`\n${statusIcon} VS Code Tests (${version}): ${results.vscode[resultKey].message} (${(results.vscode[resultKey].duration / 1000).toFixed(2)}s)${colors.reset}\n`);
@@ -220,6 +231,7 @@ function printResults(totalStartTime, allSuccess) {
     const vsColor = result.success ? colors.green : colors.red;
     const vsIcon = result.success ? '✓' : '✗';
     console.log(`${vsColor}${vsIcon} ${result.version}:${colors.reset} ${result.message} (${(result.duration / 1000).toFixed(2)}s)`);
+    console.log(`   ${colors.dim}Passed Tests: ${result.passedTests}/${result.totalTests}${colors.reset}`);
     
     // Print VS Code failures if any
     if (result.failures && result.failures.length > 0) {
