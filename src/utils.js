@@ -45,7 +45,7 @@ async function copyFileOrFolderUri(fileOrFolder, getUriFn = null, copyFn = null)
    // Initialize functions at runtime to avoid circular reference
    getUriFn = getUriFn || getFileFolderOrDocumentUri;
    copyFn = copyFn || copyToClipboard;
-   
+
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(copyFileOrFolderUri) no file or folder specified, attempting to use Active Editor document.`);
    }
@@ -375,9 +375,9 @@ async function createFormDataFromWorkspace(formdata, fileUri, filename, readFile
    }
 }
 
-async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context, 
+async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context,
    getUriFn = null, getOppositeFn = null, loggerFn = console, textCompare = false) {
-   
+
    // Initialize functions at runtime to avoid circular reference
    getUriFn = getUriFn || getFileFolderOrDocumentUri;
    getOppositeFn = getOppositeFn || getOppositeEndpointUri;
@@ -466,13 +466,13 @@ async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context
 }
 
 
-async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyComment, 
+async function copyToOppositeEndpoint(fileOrFolder, oppositeEndpoint, copyComment,
    getUriFn = null, getOppositeFn = null, fs = vscode.workspace.fs, logger = console) {
-   
+
    // Initialize functions at runtime to avoid circular reference
    getUriFn = getUriFn || getFileFolderOrDocumentUri;
    getOppositeFn = getOppositeFn || getOppositeEndpointUri;
-   
+
    if (!fileOrFolder) {
       vscode.window.showInformationMessage(`(copyToOppositeEndpoint) no file or folder specified, attempting to use Active Editor document.`);
    }
@@ -732,7 +732,7 @@ async function openFile(uri) {
    const { isBinaryFile } = await require("isbinaryfile");
    const fileUri = uriFromString(uri);
    let isBinary;
-   if (!fileUri) {  
+   if (!fileUri) {
       const editor = vscode.window.activeTextEditor;
       if (editor && editor.document?.uri && os.platform() === 'win32' && editor.document.uri.scheme === 'file') {
          // File is already open in VSCode editor - we want to open it in its default app
@@ -760,8 +760,8 @@ async function openFile(uri) {
       case '.json':
       case '.xlsx':
       case '.xls':
-          await vscode.commands.executeCommand("table-viewer.openFileInWebview", fileUri);
-          break;
+         await vscode.commands.executeCommand("table-viewer.openFileInWebview", fileUri);
+         break;
       default:
          if (fileUri.scheme === 'file') {
             isBinary = await isBinaryFile(fileUri.fsPath);
@@ -770,14 +770,15 @@ async function openFile(uri) {
                return;
             }
             if (!isBinary) {
-                // Open the local file in the editor
-                const document = await vscode.workspace.openTextDocument(fileUri);
-                vscode.window.showTextDocument(document);
-            } 
+               // Open the local file in the editor
+               const document = await vscode.workspace.openTextDocument(fileUri);
+               vscode.window.showTextDocument(document);
+            }
          }
          vscode.commands.executeCommand('vscode.open', fileUri);
-  }
+   }
 }
+
 
 module.exports = {
    getFileFolderOrDocumentUri, getLsafPath, getLocalPath, copyFileOrFolderUri,
