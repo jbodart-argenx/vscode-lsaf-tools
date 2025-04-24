@@ -30,7 +30,19 @@ async function getFolderContents(folderUri) {
         if (["lsaf-repo", "lsaf-work"].includes(folderUri.scheme)) {
             contents = await vscode.commands.executeCommand(
                 'vsce-lsaf-restapi-fs.getChildren',
-                folderUri)
+                folderUri);
+            const curDirContents = [
+                {name: ".", type: vscode.FileType.Directory, ...(await vscode.workspace.fs.stat(folderUri))},
+                {name: "..", type: vscode.FileType.Directory, ...(await vscode.workspace.fs.stat(vscode.Uri.joinPath(folderUri, '..')))},
+            ].map(d => ({
+                name: d.name,
+                type: d.type,
+                ...(d),
+                size: d.size,
+                mtime: d.mtime && new Date(d.mtime).toISOString(),
+                ctime: d.ctime && new Date(d.ctime).toISOString(),
+            }));
+            contents = [...curDirContents, ...contents]
             contents = contents.map(entry => {
                 let name = entry.name || `${entry.path}`.split(/[/\\]/).pop();
                 let type = entry.type || entry.schemaType === "file" ? vscode.FileType.File : vscode.FileType.Directory;
@@ -50,10 +62,13 @@ async function getFolderContents(folderUri) {
             });
         } else if (folderUri.scheme === 'file') {
             contents = await fs.promises.readdir(folderUri.fsPath, { withFileTypes: true });
-            // filter out '.' and '..' entries
+            // filter out '.' and '..' entries if present
             contents = contents.filter(entry => entry.name !== '.' && entry.name !== '..');
             // map to [name, type] pairs
             const contents_names_types = contents.map(entry => [entry.name, entry.isDirectory() ? vscode.FileType.Directory : vscode.FileType.File]);
+            // add '.' and '..' entries to the beginning of the array
+            contents_names_types.unshift(['..', vscode.FileType.Directory]);
+            contents_names_types.unshift(['.', vscode.FileType.Directory]);
             // get detailed information for each file or folder using 'fs'
             contents = await Promise.all(contents_names_types.map(async ([name, type]) => {
                 const filePath = path.join(folderUri.fsPath, name);
@@ -80,7 +95,13 @@ async function getFolderContents(folderUri) {
                 };
             }));
         } else {
-            contents = await vscode.workspace.fs.readDirectory(folderUri);
+            // const includeDotDots = true; // include . and .. entries
+            // contents = await vscode.workspace.fs.readDirectory(folderUri, includeDotDots);
+            contents = [
+                [".", vscode.FileType.Directory],
+                ["..", vscode.FileType.Directory],
+                ...(await vscode.workspace.fs.readDirectory(folderUri))
+            ];
             // get detailed information for each file or folder using vscode.workspace.fs
             contents = await Promise.all(contents.map(async ([name, type]) => {
                 const fileUri = vscode.Uri.joinPath(folderUri, name);
