@@ -1,6 +1,14 @@
 const beautify = require('js-beautify');
 const vscode = require('vscode');
-const { axios } = require('./axios-cookie-jar.js');
+const { axiosPromise } = require('./axios-cookie-jar.js');
+
+// Initialize axios variable to be populated asynchronously
+let axios;
+
+// Initialize axios when the module is loaded
+(async function initAxios() {
+    axios = await axiosPromise;
+})();
 
 const authTokens = {};
 
