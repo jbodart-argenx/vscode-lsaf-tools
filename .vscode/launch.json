@@ -19,17 +19,18 @@
 			"preLaunchTask": "set-main-src"
 		},
 		{
-			"name": "Run Bundled Extension",
+			"name": "Debug Bundled Extension",
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--force-node-api-uncaught-exceptions-policy=true"
-			], 
+				"${workspaceFolder}/test-fixtures/test-fixtures.code-workspace",
+				"--extensionDevelopmentPath=${workspaceFolder}"
+			],
 			"outFiles": [
 				"${workspaceFolder}/dist/**/*.js"
 			],
-         "preLaunchTask": "set-main-src"
+			"preLaunchTask": "build-and-set-main-dist",
+			"postDebugTask": "set-main-src"
 		},
 		{
 			"name": "Run Extension & Watch",
@@ -43,19 +44,6 @@
 				"${workspaceFolder}/src/**/*.js"
 			],
          "preLaunchTask": "set-main-src and Watch"
-		},
-		{
-			"name": "Run Bundled Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/dist",
-				"--force-node-api-uncaught-exceptions-policy=true"
-			],
-			"outFiles": [
-				 "${workspaceFolder}/dist/**/*.js"  // Point to the bundled JS files
-			],
-			"preLaunchTask": "set-main-dist"
 		},
 		{
 			"name": "Debug Jest Tests",
@@ -75,20 +63,18 @@
 			"request": "launch",
 			// main file of the @vscode/test-cli package: entry point for running the VS Code tests using the CLI approach
 			"program": "${workspaceFolder}/node_modules/@vscode/test-cli/out/index.js",
-			// skip downloading VS Code before running tests, assuming it's already been downloaded once
 			"args": ["--no-install"], 
-			// use VS Code's integrated terminal for output instead of the debug console
-			// this is useful for running tests that require user input
-			// e.g. tests that use the `vscode.window.showInputBox` API
-			// or tests that require a terminal to be opened
-			// e.g. tests that use the `vscode.window.createTerminal` API
-			// It also provides nicely formatted, colorized test results;
-			// handles large volumes of text more efficiently,
-			// keeps output visible and scrollable even after the debugging session ends,
-			// separate test results from other debugging information.
-			// This is particularly beneficial because the @vscode/test-cli tool produces rich,
-			// formatted output about test discovery, VS Code instance launching, extension loading,
-			// and test execution results.
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
+		},
+		{
+			"name": "Debug Bundled VS Code Tests",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceFolder}/node_modules/@vscode/test-cli/out/index.js",
+			"args": ["--no-install"],
+			"preLaunchTask": "build-and-set-main-dist",
+			"postDebugTask": "set-main-src", 
 			"console": "integratedTerminal",
 			// prevent the Debug Console from automatically opening when debugging starts
 			"internalConsoleOptions": "neverOpen"

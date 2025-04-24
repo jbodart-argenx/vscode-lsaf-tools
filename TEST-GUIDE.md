@@ -9,6 +9,10 @@ This document provides a comprehensive guide on how to run tests and review test
   - [Running Individual Test Types](#running-individual-test-types)
   - [Running Consolidated Tests](#running-consolidated-tests)
   - [Running Tests Against Multiple VS Code Versions](#running-tests-against-multiple-vs-code-versions)
+  - [Testing the Bundled Extension](#testing-the-bundled-extension)
+- [Debugging Tests](#debugging-tests)
+  - [Debugging Source Code Tests](#debugging-source-code-tests)
+  - [Debugging Bundled Extension](#debugging-bundled-extension)
 - [Reviewing Test Results](#reviewing-test-results)
   - [Standard Test Output](#standard-test-output)
   - [Consolidated Test Reports](#consolidated-test-reports)
@@ -29,6 +33,28 @@ The LSAF Tools extension uses two testing frameworks:
 Tests are organized into:
 - `test/jest/` - Jest unit tests
 - `test/vscode/` - VS Code integration tests
+
+### Testing the Bundled Extension
+
+Before publishing the extension, it's important to test the webpack-bundled version to ensure it works correctly in its packaged form. The bundled version may behave differently from the source files due to webpack's processing, which can introduce issues not present when running from source.
+
+#### Running Tests on the Bundled Extension
+
+To test the bundled extension:
+
+```bash
+# Run VS Code tests on the bundled extension (default VS Code version)
+npm run test:bundled
+
+# Run tests on all configured VS Code versions
+npm run test:bundled:all
+```
+
+These commands will:
+1. Build the extension with webpack
+2. Update the package.json main entry point to use the bundled version
+3. Run the VS Code tests against the bundled extension
+4. Restore the main entry point to the source version
 
 ## Running Tests
 
@@ -91,6 +117,66 @@ The consolidated test runner executes tests against multiple VS Code versions:
 - Version 1.71.2 (the minimum required version from package.json)
 
 You can customize these versions by editing the `vsCodeVersions` array in `run-consolidated-tests.js`.
+
+## Debugging Tests
+
+### Debugging Source Code Tests
+
+To debug tests:
+
+1. **Debug Jest Tests**:
+   - Open VS Code's Run and Debug view
+   - Select "Debug Jest Tests" configuration
+   - Press F5
+
+2. **Debug VS Code Tests**:
+   - Open VS Code's Run and Debug view
+   - Select "Debug VS Code Tests" configuration
+   - Press F5
+
+### Debugging Bundled Extension
+
+If you encounter issues in the bundled extension that don't appear when running from source files, you'll need to debug the bundled version directly.
+
+#### 1. Using Launch Configurations
+
+VS Code launch configurations are provided specifically for debugging the bundled extension:
+
+- **Debug Bundled Extension**: Launches a new VS Code window with your bundled extension loaded
+- **Debug Bundled VS Code Tests**: Runs the VS Code tests against your bundled extension in debug mode
+
+To use these:
+1. Open the Run and Debug view in VS Code (Ctrl+Shift+D)
+2. Select "Debug Bundled Extension" or "Debug Bundled VS Code Tests"
+3. Press F5 to start debugging
+
+#### 2. Generating Source Maps for Better Debugging
+
+When debugging webpack-bundled code, source maps make the debugging experience significantly better:
+
+```bash
+# Generate a development build with source maps
+npm run clean && npx webpack --mode development --devtool source-map
+```
+
+Or use the predefined task:
+- Press Ctrl+Shift+P
+- Select "Tasks: Run Task"
+- Choose "webpack-with-sourcemaps"
+
+With source maps enabled:
+- Error stack traces will point to your original source files
+- You can set breakpoints in your source files while debugging the bundled code
+- The debugger will show your original source code instead of the bundled/minified version
+
+#### 3. Common Bundle-Specific Issues
+
+When debugging issues that only occur in the bundled extension, look for:
+
+- **Path resolution problems**: Webpack may handle paths differently than Node.js
+- **Import/require differences**: Webpack's module resolution can behave differently
+- **Tree-shaking issues**: Code that might be accidentally removed by webpack's optimization
+- **Scope differences**: Variables that behave differently when bundled together
 
 ## Reviewing Test Results
 

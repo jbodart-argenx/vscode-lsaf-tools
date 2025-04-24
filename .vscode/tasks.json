@@ -44,6 +44,28 @@
             "label": "set-main-src and Watch",
             "dependsOn": ["set-main-src", "Watch Task"],
             "dependsOrder": "sequence"
+        },
+        {
+            "label": "build-and-set-main-dist",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "clean", "&&", "webpack", "&&", "node", "setMain.js", "dist"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "group": "build"
+        },
+        {
+            "label": "webpack-with-sourcemaps",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "clean", "&&", "npx", "webpack", "--mode", "development", "--devtool", "source-map"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "group": "build"
         }
     ]
 }
