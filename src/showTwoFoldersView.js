@@ -57,23 +57,32 @@ async function showTwoFoldersView(bothFoldersContents, folder1, folder2, context
             const { command, filePath, fname, parent, oppositeParent, folder1, folder2, textCompare } = message;
             console.log(`(showTwoFoldersView) message: ${beautify(JSON.stringify(message))}`);
             let parentUri, fileOrFolderUri, oppositeParentUri, oppositeFileOrFolderUri, label, oppositeLabel,
-                folderUri1, folderUri2, isFolder, isLocal, doesUriExist, doesOppositeUriExist;
+                folderUri1, folderUri2, isFolder, isLocal, uriType, oppositeUriType, doesUriExist, doesOppositeUriExist;
             if (parent && isValidUri(parent)) {
                 parentUri = uriFromString(parent);
-                fileOrFolderUri = vscode.Uri.joinPath(parentUri, String(fname));
+                fileOrFolderUri = vscode.Uri.joinPath(parentUri, String(fname).replace(/\/$/, ''));
             } else if (filePath) {
                 fileOrFolderUri = uriFromString(filePath);
             }
             if (fileOrFolderUri && fileOrFolderUri instanceof vscode.Uri) {
                 isLocal = fileOrFolderUri.scheme === 'file';
                 label = fileOrFolderUri.scheme === 'file' ? 'Local' : `${fileOrFolderUri.authority} ${fileOrFolderUri.scheme.replace('lsaf-', '')}`;
-                doesUriExist = await existsUri(fileOrFolderUri, vscode.FileType.File);
+                doesUriExist = await existsUri(fileOrFolderUri);
+                if (doesUriExist) {
+                    uriType = await vscode.workspace.fs.stat(fileOrFolderUri)?.type;
+                }
             }
             if (oppositeParent && isValidUri(oppositeParent)) {
                 oppositeParentUri = uriFromString(oppositeParent);
-                oppositeFileOrFolderUri = vscode.Uri.joinPath(oppositeParentUri, String(fname));
+                oppositeFileOrFolderUri = vscode.Uri.joinPath(oppositeParentUri, String(fname).replace(/\/$/, ''));
                 oppositeLabel = oppositeParentUri.scheme === 'file' ? 'Local' : `${oppositeParentUri.authority} ${oppositeParentUri.scheme.replace('lsaf-', '')}`;
-                doesOppositeUriExist = await existsUri(oppositeFileOrFolderUri, vscode.FileType.File);
+                doesOppositeUriExist = await existsUri(oppositeFileOrFolderUri);
+                if (doesOppositeUriExist) {
+                    oppositeUriType = await vscode.workspace.fs.stat(oppositeFileOrFolderUri)?.type;
+                    if (oppositeUriType !== vscode.FileType.Directory) {
+                        console.warn(`(showTwoFoldersView) oppositeUriType is not a directory: ${oppositeUriType}`);
+                    }
+                }
             }
             switch (command) {
                 case "openFile":
@@ -97,10 +106,17 @@ async function showTwoFoldersView(bothFoldersContents, folder1, folder2, context
                     if (folder1) {
                         folderUri1 = uriFromString(folder1);
                         doesUriExist = await existsUri(folderUri1, vscode.FileType.Directory);
+                        if (doesUriExist) {
+                            uriType = await vscode.workspace.fs.stat(folderUri1)?.type;
+                            isFolder = (uriType === vscode.FileType.Directory);
+                        }
                     }
                     if (folder2) {
                         folderUri2 = uriFromString(folder2);
                         doesOppositeUriExist = await existsUri(folderUri2, vscode.FileType.Directory);
+                        if (doesOppositeUriExist) {
+                            oppositeUriType = await vscode.workspace.fs.stat(folderUri2)?.type;
+                        }
                     }
                     if (folderUri1 instanceof vscode.Uri && folderUri2 instanceof vscode.Uri) {
                         let [contents1, contents2] = await Promise.all([folderUri1, folderUri2].map(getFolderContents));
@@ -110,7 +126,7 @@ async function showTwoFoldersView(bothFoldersContents, folder1, folder2, context
                             folderUri1,
                             folderUri2
                         );
-                    return;
+                        return;
                     } else {
                         console.error(`message.command is: "${command}", but folderUri1 or folderUri2 is invalid: ${folderUri1}, ${folderUri2}`);
                         vscode.window.showErrorMessage(`message.command is: "${command}", but folderUri1 or folderUri2 is invalid: ${folderUri1}, ${folderUri2}`);
