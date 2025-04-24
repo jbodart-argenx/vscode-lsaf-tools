@@ -30,3 +30,7 @@ All notable changes to the "vscode-lsaf-tools" extension will be documented in t
 - Add zip file support including streaming
 - Add support for opening local and remote files in the most appropriate viewer / editor / desktop application
 - fix a few bugs
+
+## 0.0.8 - 2024-04-24
+- include current and parent folders in comparison of folder contents list, allowing comparisons between two remote locations without moving to a child folder
+- Fix issue with axios-cookiejar-support (new ES module) and identification of folders as existing
