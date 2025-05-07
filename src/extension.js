@@ -117,6 +117,14 @@ async function activate(context) {
 		}
 	);
 
+	const customizeEndpointsCommand = vscode.commands.registerCommand(
+		"vscode-lsaf-tools.customizeEndpoints",
+		async () => {
+			const { customizeEndpoints } = await require('./endpoints.js');
+			return await customizeEndpoints();
+		}
+	);
+
 	context.subscriptions.push(...[
 		helloWorldCommand,
 		getXAuthTokenCommand,
@@ -127,7 +135,8 @@ async function activate(context) {
 		getLsafFilePathCommand,
 		getLocalFilePathCommand,
 		copyToOppositeEndpointCommand,
-		compareToOppositeEndpointCommand
+		compareToOppositeEndpointCommand,
+		customizeEndpointsCommand
 	]);
 
 	const commands = (await vscode.commands.getCommands()).filter(c => /lsaf/i.test(c));
