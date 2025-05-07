@@ -126,11 +126,14 @@ async function updateCredentials(key) {
    if (key == null) {
       key = await vscode.window.showInputBox({
          title: "Update credentials for host name",
-         prompt: "Enter fully qualified host name (e.g. 'example.ondemand.sas.com')\n",
+         prompt: "Enter host name (e.g. 'example.ondemand.sas.com' or just 'example')\n",
          ignoreFocusOut: true,
       });
    }
    if (!key) throw new Error('updateCredentials: no hostname provided, aborting.');
+   if (key.split('.').length < 2) {
+      key = key + '.ondemand.sas.com';
+   }
    if ((await getCredentials(key))?._password) {
       // credentials exist, delete them first
       await deleteCredentials(key);
@@ -141,7 +144,7 @@ async function updateCredentials(key) {
       console.log('newCredentials:', newCredentials)
       if (newCredentials) {
          // Attempt logon to get authToken
-         authToken = logon(key, username, password, false);
+         authToken = await logon(key, username, password, false);
       }
       if (!authToken) {
          // incorrect password or encryption failed
@@ -155,6 +158,7 @@ async function updateCredentials(key) {
          vscode.window.showInformationMessage(`Host "${key}" credentials were successfully updated.`);
       } else {
          console.error(`Host ${key} credentials were NOT saved!`);
+         debugger;
          vscode.window.showErrorMessage(`Failed to save Host ${key} credentials!`);
       }
    } catch (error) {
@@ -249,16 +253,16 @@ async function logon(host, username, password, retry = true) {
             }
          } else {
             deleteAuthTokens(host);
-            return logon(host);
+            return await logon(host);
          }
       } catch (err) {
          console.log(`(logon) Error: ${err}`);
          if (err.code === "ECONNRESET" && retry) {
             console.log(`(logon) ECONNRESET: ${err}`);
-            return logon(host);
+            return await logon(host);
          }
          deleteAuthTokens(host);
-         return logon(host);
+         return await logon(host);
       }
    }
    if (typeof username === 'string'
@@ -290,7 +294,7 @@ async function logon(host, username, password, retry = true) {
             encryptedPassword = await encryptPassword(host, username, password);
          } else {
             encryptedPassword = null;
-            if (typeof _username === 'string' && _username.trim().length > 0) return logon(host, _username);
+            if (typeof _username === 'string' && _username.trim().length > 0) return await logon(host, _username);
          }
       }
       if (typeof encryptedPassword !== 'string') {
@@ -335,10 +339,10 @@ async function logon(host, username, password, retry = true) {
                   username = credentials._username;
                   encryptedPassword = await encryptPassword(host, username, credentials._password);
                   if (typeof encryptedPassword === 'string') {
-                     return logon(host, username, encryptedPassword);
+                     return await logon(host, username, encryptedPassword);
                   }
                } else {
-                  return logon(host);
+                  return await logon(host);
                }
             } catch (error) {
                console.log(error);
