@@ -20,17 +20,22 @@ All notable changes to the "vscode-lsaf-tools" extension will be documented in t
 - Fix bugs introduced in createFormDataFromFileSystem(), getFormData(), getOppositeEndpointUri() during refactoring.
 - Display copyToOppositeEndpoint() error messages in VScode UI, if any.
 
-## 0.0.6 - 2024-04-16
+## 0.0.6 - 2025-04-16
 - Add "LSAF: Compare To Opposite Endpoint" command
 - Remove browser support (prevent ReferenceError: self is not defined)
 
-## 0.0.7 - 2024-04-23
+## 0.0.7 - 2025-04-23
 - Implement file and folder contents comparison
 - Fix vscode-test configuration and add test runner to run and provide an overview of Jest and VSCode tests and their results
 - Add zip file support including streaming
 - Add support for opening local and remote files in the most appropriate viewer / editor / desktop application
 - fix a few bugs
 
-## 0.0.8 - 2024-04-24
+## 0.0.8 - 2025-04-24
 - include current and parent folders in comparison of folder contents list, allowing comparisons between two remote locations without moving to a child folder
 - Fix issue with axios-cookiejar-support (new ES module) and identification of folders as existing
+
+## 0.0.9 - 2025-05-07
+- Fix issue with logon() function results not being properly awaited
+- Add command to customize endpoints in the extension
+- assume domain 'ondeman.sas.com' if specified hostname is unqualified
