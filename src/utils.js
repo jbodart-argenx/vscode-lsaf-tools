@@ -434,9 +434,9 @@ async function compareToOppositeEndpoint(fileOrFolder, oppositeEndpoint, context
    if (stat.type & vscode.FileType.Directory) {
       // Folder Comparison 
       const miniContext = { extensionPath: context.extensionPath };
-      compareFolderContents(fileOrFolderUri, oppositeEndpointUri, miniContext, textCompare, logger);
+      return await compareFolderContents(fileOrFolderUri, oppositeEndpointUri, miniContext, textCompare, logger);
    } else if (stat.type & vscode.FileType.File) {
-      compareFileContents(fileOrFolderUri, oppositeEndpointUri, logger);
+      return await compareFileContents(fileOrFolderUri, oppositeEndpointUri, logger);
       // try {
       //    const label = fileOrFolderUri.scheme === 'file' ? 'Local' : `${fileOrFolderUri.authority} ${fileOrFolderUri.scheme.replace('lsaf-', '')}`;
       //    const oppositeLabel = oppositeEndpointUri.scheme === 'file' ? 'Local' : `${oppositeEndpointUri.authority} ${oppositeEndpointUri.scheme.replace('lsaf-', '')}`;
