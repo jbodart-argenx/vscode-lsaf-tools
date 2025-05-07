@@ -236,6 +236,7 @@
     "prepublish": "npm run set-main-dist && npm run clean && webpack",
     "publish": "npx vsce ls && npx vsce package",
     "postpublish": "npm run set-main-src",
+    "package": "npm run set-main-dist && npm run clean && webpack && npx vsce package && npm run set-main-src",
     "watch": "nodemon"
   },
   "devDependencies": {

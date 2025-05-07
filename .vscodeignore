@@ -21,3 +21,15 @@ dist/**
 !dist/web/extension.js
 tsconfig.json
 tsconfig.web.json
+
+# Additional exclusions for test and development artifacts
+test-fixtures/**
+test-results/**
+run-consolidated-tests.js
+run-tests-all-versions.bat
+run-tests-all-versions.sh
+view-test-failure.js
+TEST-GUIDE.md
+*.vsix
+webpack.config.js
+.vscode-test.mjs

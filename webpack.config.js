@@ -9,9 +9,9 @@ const commonConfig = {
    },
    output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: '[name].js',  // Replaced pattern with the name of each entry point: 'extension' and 'web/extension'
+      filename: '[name].js',
       libraryTarget: 'commonjs2',
-      publicPath: '' // Explicitly set the publicPath to an empty string
+      publicPath: './',
    },
    resolve: {
       extensions: ['.js'],
@@ -29,8 +29,18 @@ const commonConfig = {
       new webpack.DefinePlugin({
          'self': 'globalThis'
       }),
+      // Force all dynamic imports to be included in the main bundle
+      new webpack.optimize.LimitChunkCountPlugin({
+         maxChunks: 1
+      }),
       // new BundleAnalyzerPlugin()  // after building, open a web page showing the dependency tree of the project
-   ]
+   ],
+   optimization: {
+      // Completely disable code splitting
+      minimize: true,
+      splitChunks: false,
+      runtimeChunk: false
+   }
 };
 
 const nodeConfig = {
