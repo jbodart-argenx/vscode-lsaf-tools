@@ -178,7 +178,20 @@ async function existsUri(fileUri, type = null, stat = vscode.workspace.fs.stat) 
          }
          if (type != null) exists = Boolean(fileStat.type & type);  // & : bitwise AND operation
       } catch (error) {
-         if (error) console.log(`Uri does not exist: ${fileUri},`, error?.code);
+         if (error.code === 'Unavailable') {
+            let fsProviderExtension = `Unknown Filesysteme Provider extension for URI scheme: ${fileUri.scheme}`;
+            if (['lsaf-repo', 'lsaf-work'].includes(fileUri.scheme)) {
+               fsProviderExtension = "jbodart-argenx.vsce-lsaf-restapi-fs";
+            }
+            const fsExtension = vscode.extensions.getExtension(fsProviderExtension);
+            if (!fsExtension) {
+               vscode.window.showErrorMessage(`Filesystem Provider extension for URI scheme: ${fileUri.scheme} not installed: ${fsProviderExtension}`);
+               console.warn(`Filesystem Provider extension for URI scheme: ${fileUri.scheme} not installed: ${fsProviderExtension}`);
+            }
+            console.warn(`Uri is not available: ${fileUri},`, error?.code);
+         } else {
+            console.log(`Uri does not exist: ${fileUri},`, error?.code);
+         }
       }
    }
    return exists;

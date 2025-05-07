@@ -29,12 +29,16 @@
     "onCommand:vscode-lsaf-tools.getLsafFilePath",
     "onCommand:vscode-lsaf-tools.getLocalFilePath",
     "onCommand:vscode-lsaf-tools.copyToOppositeEndpoint",
-    "onCommand:vscode-lsaf-tools.compareToOppositeEndpoint"
+    "onCommand:vscode-lsaf-tools.compareToOppositeEndpoint",
+    "onCommand:vscode-lsaf-tools.customizeEndpoints"
   ],
   "main": "./src/extension.js",
   "capabilities": {
     "virtualWorkspaces": true
   },
+  "extensionDependencies": [
+    "jbodart-argenx.vsce-lsaf-restapi-fs"
+  ],
   "contributes": {
     "configuration": {
       "type": "object",
@@ -81,40 +85,57 @@
       },
       {
         "command": "vscode-lsaf-tools.updateCredentials",
-        "title": "LSAF: Update Credentials",
+        "title": "Update Credentials",
         "category": "LSAF"
       },
       {
         "command": "vscode-lsaf-tools.copyFileUri",
-        "title": "LSAF: Copy Uri",
+        "title": "Copy Uri",
         "category": "LSAF"
       },
       {
         "command": "vscode-lsaf-tools.getOppositeEndpointUri",
-        "title": "LSAF: Get Opposite Endpoint Uri"
+        "title": "Get Opposite Endpoint Uri",
+        "category": "LSAF"
       },
       {
         "command": "vscode-lsaf-tools.getLsafFilePath",
-        "title": "LSAF: Get LSAF Path"
+        "title": "Get LSAF Path",
+        "category": "LSAF"
       },
       {
         "command": "vscode-lsaf-tools.getLocalFilePath",
-        "title": "LSAF: Get Local Path"
+        "title": "Get Local Path",
+        "category": "LSAF"
       },
       {
         "command": "vscode-lsaf-tools.compareToOppositeEndpoint",
-        "title": "LSAF: Compare To Opposite Endpoint"
+        "title": "Compare To Opposite Endpoint",
+        "category": "LSAF"
       },
       {
         "command": "vscode-lsaf-tools.copyToOppositeEndpoint",
-        "title": "LSAF: Copy To Opposite Endpoint"
+        "title": "Copy To Opposite Endpoint",
+        "category": "LSAF"
+      },
+      {
+        "command": "vscode-lsaf-tools.customizeEndpoints",
+        "title": "Customize Endpoints",
+        "category": "LSAF"
       },
       {
         "command": "vscode-lsaf-tools.lsaf-helloWorld",
-        "title": "LSAF: Hello World"
+        "title": "Hello World",
+        "category": "LSAF"
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "vscode-lsaf-tools.customizeEndpoints",
+          "group": "LSAF"
+        }
+      ],
       "explorer/context": [
         {
           "command": "vscode-lsaf-tools.copyFileUri",
