@@ -36,9 +36,6 @@
   "capabilities": {
     "virtualWorkspaces": true
   },
-  "extensionDependencies": [
-    "jbodart-argenx.vsce-lsaf-restapi-fs"
-  ],
   "contributes": {
     "configuration": {
       "type": "object",
@@ -227,7 +224,7 @@
     "run-lint": "node run-lint.js",
     "test": "npm run test:jest && npm run test:vscode",
     "test:vscode": "vscode-test",
-    "test:vscode:stable": "cross-env VSCODE_TEST_VERSION=stable vscode-test",
+    "test:vscode:stable": "cross-env VSCODE_TEST_VERSION=stable NO_EXTENSION_DEPS=true vscode-test",
     "test:vscode:all": "npm run test:vscode && npm run test:vscode:stable",
     "test:bundled": "npm run build && npm run set-main-dist && npm run test:vscode && npm run set-main-src",
     "test:bundled:all": "npm run build && npm run set-main-dist && npm run test:vscode:all && npm run set-main-src",

@@ -188,6 +188,10 @@ const extensions = findVSCodeExtensions([
   silent: true 
 });
 
+// Get the absolute path to the local vsce-lsaf-restapi-fs extension
+const localLsafRestApiPath = path.resolve(path.join(__dirname, '..', 'vsce-lsaf-restapi-fs'));
+console.log(`Checking for local extension at: ${localLsafRestApiPath}`);
+
 export default defineConfig({
   files: 'test/vscode/**/*.test.js',
   version: configVersion, // Either packageVersion or 'stable'
@@ -198,12 +202,17 @@ export default defineConfig({
   },
   extensionDevelopmentPath: [
     '.',
-    '../vsce-lsaf-restapi-fs',
+    // Add the local extension path explicitly if it exists
+    ...(fs.existsSync(localLsafRestApiPath) ? [localLsafRestApiPath] : []),
+    // Also include any other extensions found in user's directory
     ...extensions
   ],
+  // Skip attempting to install extensions from the marketplace
+  skipExtensionInstall: true,
   launchArgs: [
-    `${path.resolve(__dirname, "test-fixtures/README.md").replace(/\\/g, '/')}`
-	// '--disable-extensions',
+    `${path.resolve(__dirname, "test-fixtures/README.md").replace(/\\/g, '/')}`,
+    // Disable all extensions except those we explicitly include
+    '--disable-extensions'
   ],
   launchTestsTimeout: 30000
 });
