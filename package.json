@@ -2,7 +2,7 @@
   "name": "vscode-lsaf-tools",
   "displayName": "vscode-lsaf-tools",
   "description": "A collection of tools for working with remote LSAF files",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "publisher": "jbodart-argenx",
   "license": "MIT",
   "engines": {
@@ -24,6 +24,7 @@
     "onCommand:vscode-lsaf-tools.getXAuthToken",
     "onCommand:vscode-lsaf-tools.deleteCredentials",
     "onCommand:vscode-lsaf-tools.updateCredentials",
+    "onCommand:vscode-lsaf-tools.copyFilename",
     "onCommand:vscode-lsaf-tools.copyFileUri",
     "onCommand:vscode-lsaf-tools.getOppositeEndpointUri",
     "onCommand:vscode-lsaf-tools.getLsafFilePath",
@@ -86,6 +87,11 @@
         "category": "LSAF"
       },
       {
+        "command": "vscode-lsaf-tools.copyFilename",
+        "title": "Copy Filename",
+        "category": "LSAF"
+      },
+      {
         "command": "vscode-lsaf-tools.copyFileUri",
         "title": "Copy Uri",
         "category": "LSAF"
@@ -135,6 +141,10 @@
       ],
       "explorer/context": [
         {
+          "command": "vscode-lsaf-tools.copyFilename",
+          "group": "LSAF"
+        },
+        {
           "command": "vscode-lsaf-tools.copyFileUri",
           "group": "LSAF"
         },
@@ -161,6 +171,10 @@
       ],
       "editor/context": [
         {
+          "command": "vscode-lsaf-tools.copyFilename",
+          "group": "LSAF"
+        },
+        {
           "command": "vscode-lsaf-tools.copyFileUri",
           "group": "LSAF"
         },
@@ -186,6 +200,10 @@
         }
       ],
       "editor/title/context": [
+        {
+          "command": "vscode-lsaf-tools.copyFilename",
+          "group": "LSAF"
+        },
         {
           "command": "vscode-lsaf-tools.copyFileUri",
           "group": "LSAF"

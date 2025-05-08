@@ -44,6 +44,14 @@ async function activate(context) {
 		}
 	);
 
+	const getFilenameCommand = vscode.commands.registerCommand(
+		"vscode-lsaf-tools.copyFilename",
+		async (fileOrFolder, fileOrFolders) => {
+			const { copyFileOrFoldername } = await require('./utils.js');
+			return copyFileOrFoldername(fileOrFolders || [fileOrFolder]); // mulitple || single file(s)/folder(s) selected
+		}
+	);
+
 	const getFileUriCommand = vscode.commands.registerCommand(
 		"vscode-lsaf-tools.copyFileUri",
 		async (fileOrFolder, fileOrFolders) => {
@@ -130,6 +138,7 @@ async function activate(context) {
 		getXAuthTokenCommand,
 		deleteCredentialsCommand,
 		updateCredentialsCommand,
+		getFilenameCommand,
 		getFileUriCommand,
 		getOppositeEndpointUriCommand,
 		getLsafFilePathCommand,

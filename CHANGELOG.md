@@ -39,3 +39,6 @@ All notable changes to the "vscode-lsaf-tools" extension will be documented in t
 - Fix issue with logon() function results not being properly awaited
 - Add command to customize endpoints in the extension
 - assume domain 'ondeman.sas.com' if specified hostname is unqualified
+
+## 0.0.10 - 2025-05-08
+- Add copy Filename command

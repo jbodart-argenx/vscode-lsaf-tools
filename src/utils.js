@@ -41,6 +41,34 @@ function getFileFolderOrDocumentUri(fileOrFolder) {
 
 
 
+async function copyFileOrFoldername(fileOrFolder, getUriFn = null, copyFn = null) {
+   // Initialize functions at runtime to avoid circular reference
+   getUriFn = getUriFn || getFileFolderOrDocumentUri;
+   copyFn = copyFn || copyToClipboard;
+
+   if (!fileOrFolder) {
+      vscode.window.showInformationMessage(`(copyFileOrFoldername) no file or folder specified, attempting to use Active Editor document.`);
+   }
+   let fileOrFoldername;
+   if (Array.isArray(fileOrFolder)) {
+      fileOrFoldername = fileOrFolder.map(getUriFn).map(uri => uri ? uri.path.split('/').pop() : '');
+   } else {
+      const uri = getUriFn(fileOrFolder);
+      // if (uri && uri instanceof vscode.Uri && uri.scheme === 'sasServer') {
+      //    const binaryContentsBuffer = await vscode.workspace.fs.readFile(uri);
+      //    // print buffer length
+      //    console.log(`(copyFileOrFoldername) Buffer length: ${binaryContentsBuffer.length}`);
+      //    // convert buffer to string
+      //    const binaryContentsText = new TextDecoder("utf-8").decode(binaryContentsBuffer);
+      //    // print string
+      //    console.log(`(copyFileOrFoldername) Text: ${binaryContentsText}`);
+      // }
+      fileOrFoldername = uri ? [uri.path.split('/').pop()] : [''];
+   }
+   await copyFn(fileOrFoldername, 'File/Folder name');
+}
+
+
 async function copyFileOrFolderUri(fileOrFolder, getUriFn = null, copyFn = null) {
    // Initialize functions at runtime to avoid circular reference
    getUriFn = getUriFn || getFileFolderOrDocumentUri;
@@ -781,7 +809,7 @@ async function openFile(uri) {
 
 
 module.exports = {
-   getFileFolderOrDocumentUri, getLsafPath, getLocalPath, copyFileOrFolderUri,
+   getFileFolderOrDocumentUri, getLsafPath, getLocalPath, copyFileOrFoldername, copyFileOrFolderUri,
    getOppositeEndpointUri, copyToOppositeEndpoint, copyToClipboard, enterMultiLineComment,
    getFormData, getFilenameFromUri, createFormDataFromContents, getFileReadStreamAndCreateFormData,
    createFormDataFromFileSystem, createFormDataFromWorkspace, compareToOppositeEndpoint,
